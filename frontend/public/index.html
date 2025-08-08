@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f97316" />
+    <meta name="description" content="Ekima Interactive Learning Platform - Personalized education for Tanzanian students with AI-powered recommendations, gamification, and progress tracking." />
+    <meta name="keywords" content="education, learning, tanzania, necta, mathematics, physics, chemistry, biology, online learning, gamification" />
+    <meta name="author" content="Ekima Education Technology" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ekima.co.tz/" />
+    <meta property="og:title" content="Ekima - Interactive Learning Platform" />
+    <meta property="og:description" content="Personalized education for Tanzanian students with AI-powered recommendations, gamification, and progress tracking." />
+    <meta property="og:image" content="%PUBLIC_URL%/logo192.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://ekima.co.tz/" />
+    <meta property="twitter:title" content="Ekima - Interactive Learning Platform" />
+    <meta property="twitter:description" content="Personalized education for Tanzanian students with AI-powered recommendations, gamification, and progress tracking." />
+    <meta property="twitter:image" content="%PUBLIC_URL%/logo192.png" />
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#f97316',
+              'primary-dark': '#ea580c',
+              'primary-light': '#fed7aa',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+              'slide-up': 'slideUp 0.3s ease-out',
+              'bounce-in': 'bounceIn 0.6s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(10px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+              bounceIn: {
+                '0%': { transform: 'scale(0.3)', opacity: '0' },
+                '50%': { transform: 'scale(1.05)' },
+                '70%': { transform: 'scale(0.9)' },
+                '100%': { transform: 'scale(1)', opacity: '1' },
+              },
+            },
+          },
+        },
+      }
+    </script>
+    
+    <title>Ekima - Interactive Learning Platform</title>
+    
+    <!-- Critical CSS for loading state -->
+    <style>
+      /* Loading screen styles */
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        color: white;
+      }
+      
+      .loading-logo {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        animation: pulse 2s infinite;
+      }
+      
+      .loading-dots {
+        display: flex;
+        gap: 8px;
+      }
+      
+      .loading-dot {
+        width: 8px;
+        height: 8px;
+        background: white;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out;
+      }
+      
+      .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+      .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.7; }
+      }
+      
+      @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+      }
+      
+      /* Hide loading screen when React app loads */
+      .app-loaded #loading-screen {
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <div style="padding: 20px; text-align: center; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">
+        <h2>JavaScript Required</h2>
+        <p>You need to enable JavaScript to run the Ekima Learning Platform.</p>
+        <p>Please enable JavaScript in your browser settings and reload the page.</p>
+      </div>
+    </noscript>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+      <div class="loading-logo">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+        </svg>
+      </div>
+      <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 8px;">Ekima</h1>
+      <p style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 30px;">Interactive Learning Platform</p>
+      <div class="loading-dots">
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+      </div>
+    </div>
+    
+    <!-- React App Root -->
+    <div id="root"></div>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      // Remove loading screen when React app loads
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          document.body.classList.add('app-loaded');
+          setTimeout(function() {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+              loadingScreen.remove();
+            }
+          }, 500);
+        }, 1000);
+      });
+      
+      // Register service worker for PWA capabilities
+      if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+      
+      // Performance monitoring
+      if ('performance' in window) {
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            const perfData = performance.getEntriesByType('navigation')[0];
+            if (perfData) {
+              console.log('Page Load Time:', perfData.loadEventEnd - perfData.fetchStart, 'ms');
+            }
+          }, 0);
+        });
+      }
+    </script>
+    
+    <!-- Analytics (replace with your actual analytics code) -->
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      // gtag('config', 'GA_TRACKING_ID'); // Uncomment and replace with actual ID
+    </script>
+  </body>
+</html>
