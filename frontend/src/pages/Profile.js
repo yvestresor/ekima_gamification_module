@@ -37,7 +37,8 @@ import {
   VolumeX,
   Smartphone,
   Monitor,
-  Palette
+  Palette,
+  Trophy
 } from 'lucide-react';
 
 // Import contexts and hooks
@@ -51,7 +52,6 @@ import UserDashboard from '../components/user/UserDashboard';
 import BadgeDisplay from '../components/gamification/BadgeDisplay';
 import ProgressTracker from '../components/learning/ProgressTracker';
 import Loading from '../components/common/Loading';
-import UserProfile from '../components/user/UserProfile';
 import UserSettings from '../components/user/UserSettings';
 
 // Import utilities
@@ -92,7 +92,7 @@ const Profile = () => {
   const [dashboardData, setDashboardData] = useState(null);
 
   // Contexts and hooks
-  const { user, updateUserProfile, changePassword, deleteAccount, hasPermission } = useAuth();
+  const { user, updateProfile, changePassword, deleteAccount, hasPermission } = useAuth();
   const { userProgress } = useProgress();
   const { 
     totalXP, 
@@ -109,14 +109,14 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       setProfileForm({
-        name: user.name || '',
+        name: user.name || user.username || '',
         email: user.email || '',
         bio: user.bio || '',
         location: user.location || '',
         school: user.school || '',
         grade: user.grade || '',
         interests: user.interests || [],
-        avatar: user.avatar || ''
+        avatar: user.profilePic || user.avatar || ''
       });
     }
   }, [user]);
@@ -124,9 +124,9 @@ const Profile = () => {
   useEffect(() => {
     if (user && user._id) {
       setLoading(true);
-      userAPI.getProfile(user._id)
-        .then((data) => {
-          setDashboardData(data);
+      userAPI.getProfile()
+        .then((response) => {
+          setDashboardData(response.data);
         })
         .catch((err) => {
           setError('Failed to load profile data');
@@ -145,19 +145,13 @@ const Profile = () => {
     { id: 'privacy', label: 'Privacy', icon: Shield }
   ];
 
-  // Add User Management tab for admins/teachers
-  if ((user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_users')))) && !tabs.some(t => t.id === 'users')) {
-    tabs.push({ id: 'users', label: 'User Management', icon: Users });
-  }
-
-  // Add Recommendations Management tab for admins/teachers
-  if ((user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_recommendations')))) && !tabs.some(t => t.id === 'recommendations')) {
-    tabs.push({ id: 'recommendations', label: 'Recommendations', icon: Target });
-  }
-
-  // Add Quiz Attempts Management tab for admins/teachers
-  if ((user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_quizattempts')))) && !tabs.some(t => t.id === 'quizAttempts')) {
-    tabs.push({ id: 'quizAttempts', label: 'Quiz Attempts', icon: BarChart3 });
+  // Add admin/teacher specific tabs
+  if (user && (user.role === 'admin' || user.role === 'teacher')) {
+    tabs.push(
+      { id: 'users', label: 'User Management', icon: Users },
+      { id: 'recommendations', label: 'Recommendations', icon: Target },
+      { id: 'quizAttempts', label: 'Quiz Attempts', icon: BarChart3 }
+    );
   }
 
   // User management state
@@ -172,13 +166,13 @@ const Profile = () => {
 
   // Fetch users for management
   useEffect(() => {
-    if (activeTab === 'users' && (user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_users'))))) {
+    if (activeTab === 'users' && user && (user.role === 'admin' || user.role === 'teacher')) {
       setUserCrudLoading(true);
       userAPI.getAll()
-        .then(res => { setUsers(res.data); setUserCrudLoading(false); })
+        .then(res => { setUsers(res.data || []); setUserCrudLoading(false); })
         .catch(err => { setUserCrudError('Failed to load users'); setUserCrudLoading(false); });
     }
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   // User CRUD handlers
   const handleAddUser = async () => {
@@ -242,13 +236,13 @@ const Profile = () => {
 
   // Fetch badges for management
   useEffect(() => {
-    if (activeTab === 'achievements' && (user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_badges'))))) {
+    if (activeTab === 'achievements' && user && (user.role === 'admin' || user.role === 'teacher')) {
       setBadgeCrudLoading(true);
       badgeAPI.getAll()
-        .then(res => { setBadges(res.data); setBadgeCrudLoading(false); })
+        .then(res => { setBadges(res.data || []); setBadgeCrudLoading(false); })
         .catch(err => { setBadgeCrudError('Failed to load badges'); setBadgeCrudLoading(false); });
     }
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   // Badge CRUD handlers
   const handleAddBadge = async () => {
@@ -312,13 +306,13 @@ const Profile = () => {
 
   // Fetch recommendations for management
   useEffect(() => {
-    if (activeTab === 'recommendations' && (user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_recommendations'))))) {
+    if (activeTab === 'recommendations' && user && (user.role === 'admin' || user.role === 'teacher')) {
       setRecommendationCrudLoading(true);
       recommendationAPI.getAll()
-        .then(res => { setRecommendations(res.data); setRecommendationCrudLoading(false); })
+        .then(res => { setRecommendations(res.data || []); setRecommendationCrudLoading(false); })
         .catch(err => { setRecommendationCrudError('Failed to load recommendations'); setRecommendationCrudLoading(false); });
     }
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   // Recommendation CRUD handlers
   const handleAddRecommendation = async () => {
@@ -382,13 +376,13 @@ const Profile = () => {
 
   // Fetch quiz attempts for management
   useEffect(() => {
-    if (activeTab === 'quizAttempts' && (user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_quizattempts'))))) {
+    if (activeTab === 'quizAttempts' && user && (user.role === 'admin' || user.role === 'teacher')) {
       setQuizAttemptCrudLoading(true);
       quizAttemptAPI.getAll()
-        .then(res => { setQuizAttempts(res.data); setQuizAttemptCrudLoading(false); })
+        .then(res => { setQuizAttempts(res.data || []); setQuizAttemptCrudLoading(false); })
         .catch(err => { setQuizAttemptCrudError('Failed to load quiz attempts'); setQuizAttemptCrudLoading(false); });
     }
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   // Quiz attempt CRUD handlers
   const handleAddQuizAttempt = async () => {
@@ -440,15 +434,48 @@ const Profile = () => {
     }
   };
 
+  // Handle canceling edit mode
+  const handleCancelEdit = () => {
+    // Reset form to original user data
+    if (user) {
+      setProfileForm({
+        name: user.name || user.username || '',
+        email: user.email || '',
+        bio: user.bio || '',
+        location: user.location || '',
+        school: user.school || '',
+        grade: user.grade || '',
+        interests: user.interests || [],
+        avatar: user.profilePic || user.avatar || ''
+      });
+    }
+    setIsEditing(false);
+    setError(null);
+  };
+
   // Handle profile form submission
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
-      await updateUserProfile(profileForm);
-      setIsEditing(false);
       setError(null);
+      
+      // Update user profile via API
+      const result = await updateProfile(profileForm);
+      
+      if (result && result.success === false) {
+        setError(result.error || 'Failed to update profile');
+        return;
+      }
+      
+      setIsEditing(false);
+      
+      // Show success message (optional)
+      setTimeout(() => {
+        // Could add a success toast here
+      }, 100);
+      
     } catch (err) {
-      setError('Failed to update profile');
+      setError(err.message || 'Failed to update profile');
       console.error('Profile update error:', err);
     } finally {
       setLoading(false);
@@ -500,7 +527,7 @@ const Profile = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/')}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ← Back to Dashboard
@@ -551,7 +578,262 @@ const Profile = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <UserProfile variant="full" isEditable={true} />
+          <div className="space-y-6">
+            {/* Profile Header Card */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border">
+              <div className="flex flex-col md:flex-row md:items-start md:space-x-6">
+                {/* Avatar and Basic Info */}
+                <div className="text-center md:text-left">
+                  <div className="relative inline-block">
+                    <img
+                      src={user?.profilePic || user?.avatar || '/api/placeholder/100/100'}
+                      alt={user?.name || user?.username}
+                      className="w-24 h-24 rounded-full object-cover mx-auto md:mx-0"
+                    />
+                    {isEditing && (
+                      <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors">
+                        <Camera size={16} />
+                      </button>
+                    )}
+                    {levelInfo && (
+                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-500 rounded-full border-2 border-white flex items-center justify-center">
+                        <span className="text-sm font-bold text-white">{levelInfo.level}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {isEditing ? (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={profileForm.name || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 focus:outline-none"
+                        placeholder="Enter your name"
+                      />
+                    </div>
+                  ) : (
+                    <h2 className="text-2xl font-bold text-gray-900 mt-4">
+                      {user?.name || user?.username || 'Unknown User'}
+                    </h2>
+                  )}
+                  
+                  <div className="flex items-center justify-center md:justify-start mt-2 space-x-2">
+                    <Star size={16} className="text-yellow-500" />
+                    <span className="text-gray-600">Level {levelInfo?.level || 1} Learner</span>
+                  </div>
+                </div>
+
+                {/* Profile Details */}
+                <div className="flex-1 mt-6 md:mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Contact Info */}
+                    <div className="space-y-3">
+                      {/* Email */}
+                      <div className="flex items-center text-gray-600">
+                        <Mail size={16} className="mr-2" />
+                        {isEditing ? (
+                          <input
+                            type="email"
+                            value={profileForm.email || ''}
+                            onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                            className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none flex-1"
+                            placeholder="Enter your email"
+                          />
+                        ) : (
+                          <span className="text-sm">{user?.email || 'No email provided'}</span>
+                        )}
+                      </div>
+                      
+                      {/* Location */}
+                      <div className="flex items-center text-gray-600">
+                        <MapPin size={16} className="mr-2" />
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={profileForm.location || ''}
+                            onChange={(e) => setProfileForm(prev => ({ ...prev, location: e.target.value }))}
+                            className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none flex-1"
+                            placeholder="Enter your location"
+                          />
+                        ) : (
+                          <span className="text-sm">{user?.location || (isEditing ? '' : 'No location provided')}</span>
+                        )}
+                      </div>
+                      
+                      {/* School */}
+                      <div className="flex items-center text-gray-600">
+                        <School size={16} className="mr-2" />
+                        {isEditing ? (
+                          <div className="flex-1 space-y-1">
+                            <input
+                              type="text"
+                              value={profileForm.school || ''}
+                              onChange={(e) => setProfileForm(prev => ({ ...prev, school: e.target.value }))}
+                              className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none w-full"
+                              placeholder="Enter your school"
+                            />
+                            <input
+                              type="text"
+                              value={profileForm.grade || ''}
+                              onChange={(e) => setProfileForm(prev => ({ ...prev, grade: e.target.value }))}
+                              className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none w-full"
+                              placeholder="Enter your grade"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm">
+                            {user?.school || 'No school provided'}
+                            {user?.grade && <span className="ml-1">({user.grade})</span>}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center text-gray-600">
+                        <Calendar size={16} className="mr-2" />
+                        <span className="text-sm">Joined {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recently'}</span>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="space-y-3">
+                      {streakData && (
+                        <div className="flex items-center text-gray-600">
+                          <Flame size={16} className="mr-2 text-orange-500" />
+                          <span className="text-sm">
+                            {streakData.currentStreak} day learning streak
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  {(user?.bio || isEditing) && (
+                    <div className="mt-4">
+                      {isEditing ? (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                          <textarea
+                            value={profileForm.bio || ''}
+                            onChange={(e) => setProfileForm(prev => ({ ...prev, bio: e.target.value }))}
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="Tell us about yourself..."
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-gray-700">{user.bio}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                {isEditing && (
+                  <div className="flex flex-col space-y-2 mt-6 md:mt-0">
+                    <button
+                      onClick={handleSaveProfile}
+                      className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      disabled={loading}
+                    >
+                      <Save size={16} className="mr-2" />
+                      {loading ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <X size={16} className="mr-2" />
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-red-600">{error}</p>
+              </div>
+            )}
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg p-4 border text-center">
+                <div className="text-2xl font-bold text-blue-600">{totalXP || 0}</div>
+                <div className="text-sm text-gray-600">Total XP</div>
+                <div className="mt-2">
+                  <div className="text-xs text-gray-500">
+                    {levelInfo?.xpToNextLevel || 0} to Level {(levelInfo?.level || 1) + 1}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border text-center">
+                <div className="text-2xl font-bold text-purple-600">{gems || 0}</div>
+                <div className="text-sm text-gray-600">Gems</div>
+                <div className="flex items-center justify-center mt-2 text-xs text-gray-500">
+                  <Zap size={12} className="mr-1" />
+                  +0 this week
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border text-center">
+                <div className="text-2xl font-bold text-green-600">{achievements?.length || 0}</div>
+                <div className="text-sm text-gray-600">Achievements</div>
+                <div className="flex items-center justify-center mt-2 text-xs text-gray-500">
+                  <Trophy size={12} className="mr-1" />
+                  +0 this week
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border text-center">
+                <div className="text-2xl font-bold text-orange-600">{streakData?.currentStreak || 0}</div>
+                <div className="text-sm text-gray-600">Day Streak</div>
+                <div className="flex items-center justify-center mt-2 text-xs text-gray-500">
+                  <Flame size={12} className="mr-1" />
+                  Best: {streakData?.longestStreak || 0} days
+                </div>
+              </div>
+            </div>
+
+            {/* Learning Performance */}
+            {performanceMetrics && (
+              <div className="bg-white rounded-xl p-6 border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <BarChart3 size={20} className="mr-2 text-green-500" />
+                  Learning Performance
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <div className="text-sm text-gray-600 mb-1">Average Quiz Score</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {performanceMetrics.averageQuizScore?.toFixed(0) || 0}%
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-gray-600 mb-1">Completion Rate</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {performanceMetrics.completionRate?.toFixed(0) || 0}%
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-gray-600 mb-1">Learning Velocity</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {performanceMetrics.learningVelocity?.toFixed(1) || 0.0}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">chapters/week</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Achievements Tab */}
@@ -560,7 +842,7 @@ const Profile = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm border">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Achievement Gallery</h3>
-                {user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_badges'))) && (
+                {user && (user.role === 'admin' || user.role === 'teacher') && (
                   <button
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
                     onClick={() => { setShowAddBadgeModal(true); setBadgeForm({ name: '', description: '', icon: '', xp_reward: 0, gems_reward: 0, rarity: 'common', requirement: '', type: 'completion' }); }}
@@ -577,7 +859,7 @@ const Profile = () => {
                   badges.map((badge) => (
                     <div key={badge._id} className="relative">
                       <BadgeDisplay badges={[badge]} layout="grid" showDetails={true} />
-                      {user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_badges'))) && (
+                      {user && (user.role === 'admin' || user.role === 'teacher') && (
                         <div className="absolute top-2 right-2 flex gap-2">
                           <button
                             className="bg-yellow-400 text-white px-2 py-1 rounded hover:bg-yellow-500"
@@ -747,7 +1029,9 @@ const Profile = () => {
 
         {/* Settings Tab */}
         {activeTab === 'settings' && (
+          <div className="bg-white rounded-xl p-6 shadow-sm border">
           <UserSettings variant="full" />
+          </div>
         )}
 
         {/* Privacy Tab */}
@@ -813,7 +1097,7 @@ const Profile = () => {
         )}
 
         {/* User Management Tab (admin/teacher only) */}
-        {activeTab === 'users' && (user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_users')))) && (
+        {activeTab === 'users' && user && (user.role === 'admin' || user.role === 'teacher') && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl p-6 shadow-sm border">
               <div className="flex items-center justify-between mb-4">
@@ -841,13 +1125,13 @@ const Profile = () => {
                   <tbody className="bg-white divide-y divide-gray-200 text-black">
                     {users.map((u) => (
                       <tr key={u._id}>
-                        <td className="px-4 py-2 whitespace-nowrap">{u.name}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{u.username}</td>
                         <td className="px-4 py-2 whitespace-nowrap">{u.email}</td>
                         <td className="px-4 py-2 whitespace-nowrap capitalize">{u.role}</td>
                         <td className="px-4 py-2 whitespace-nowrap">
                           <button
                             className="bg-yellow-400 text-white px-2 py-1 rounded hover:bg-yellow-500 mr-2"
-                            onClick={() => { setShowEditUserModal(true); setEditUser(u); setUserForm({ name: u.name, email: u.email, role: u.role, password: '' }); }}
+                            onClick={() => { setShowEditUserModal(true); setEditUser(u); setUserForm({ name: u.username, email: u.email, role: u.role, password: '' }); }}
                           >Edit</button>
                           <button
                             className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
@@ -898,7 +1182,7 @@ const Profile = () => {
         )}
 
         {/* Recommendations Management Tab (admin/teacher only) */}
-        {activeTab === 'recommendations' && (user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_recommendations')))) && (
+        {activeTab === 'recommendations' && user && (user.role === 'admin' || user.role === 'teacher') && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl p-6 shadow-sm border">
               <div className="flex items-center justify-between mb-4">
@@ -1012,7 +1296,7 @@ const Profile = () => {
         )}
 
         {/* Quiz Attempts Management Tab (admin/teacher only) */}
-        {activeTab === 'quizAttempts' && (user && (user.role === 'admin' || user.role === 'teacher' || (typeof hasPermission === 'function' && hasPermission('manage_quizattempts')))) && (
+        {activeTab === 'quizAttempts' && user && (user.role === 'admin' || user.role === 'teacher') && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl p-6 shadow-sm border">
               <div className="flex items-center justify-between mb-4">

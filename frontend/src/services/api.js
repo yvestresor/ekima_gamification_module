@@ -32,6 +32,7 @@ apiClient.interceptors.response.use(
 // ================= USER API =================
 export const userAPI = {
   getProfile: () => apiClient.get('/users/profile'),
+  updateProfile: (data) => apiClient.put('/users/profile', data),
   getAll: () => apiClient.get('/users'),
   getById: (id) => apiClient.get(`/users/${id}`),
   create: (data) => apiClient.post('/users', data),
@@ -135,6 +136,20 @@ export const questionAPI = {
   create: (data) => apiClient.post('/question', data),
   update: (id, data) => apiClient.put(`/question/${id}`, data),
   delete: (id) => apiClient.delete(`/question/${id}`),
+};
+
+// =============== NOTIFICATIONS ===============
+export const notificationAPI = {
+  getAll: (params) => apiClient.get('/notifications', { 
+    params, 
+    timeout: 5000 // Shorter timeout for notifications to prevent hanging
+  }),
+  getById: (id) => apiClient.get(`/notifications/${id}`),
+  create: (data) => apiClient.post('/notifications', data),
+  createBulk: (data) => apiClient.post('/notifications/bulk', data),
+  markAsRead: (id) => apiClient.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => apiClient.patch('/notifications/read-all'),
+  delete: (id) => apiClient.delete(`/notifications/${id}`),
 };
 
 // =============== AUTH ===============

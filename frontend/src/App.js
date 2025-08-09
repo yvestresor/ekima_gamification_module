@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProgressProvider } from './context/ProgressContext';
 import { RecommendationProvider } from './context/RecommendationContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/common/Layout';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
@@ -20,6 +22,8 @@ import Models3D from './pages/Models3D';
 import Questions from './pages/Questions';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import Leaderboards from './pages/Leaderboards';
+import Notifications from './pages/Notifications';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import SubjectFormPage from './pages/SubjectFormPage';
 import TopicFormPage from './pages/TopicFormPage';
@@ -33,10 +37,12 @@ import './styles/animations.css';
 function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <ProgressProvider>
-          <RecommendationProvider>
-            <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <ProgressProvider>
+              <RecommendationProvider>
+              <Router>
               <div className="App">
                 <Routes>
                   {/* Public Routes */}
@@ -61,6 +67,8 @@ function App() {
                             <Route path="/models" element={<Models3D />} />
                             <Route path="/questions" element={<Questions />} />
                             <Route path="/progress" element={<Progress />} />
+                            <Route path="/leaderboards" element={<Leaderboards />} />
+                            <Route path="/notifications" element={<Notifications />} />
                             <Route path="/profile" element={<Profile />} />
                             <Route path="/topics/new" element={<TopicFormPage mode="add" />} />
                             <Route path="/topics/:topicId/edit" element={<TopicFormPage mode="edit" />} />
@@ -74,10 +82,12 @@ function App() {
                   />
                 </Routes>
               </div>
-            </Router>
-          </RecommendationProvider>
-        </ProgressProvider>
-      </AuthProvider>
+              </Router>
+              </RecommendationProvider>
+            </ProgressProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

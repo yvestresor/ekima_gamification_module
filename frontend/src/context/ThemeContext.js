@@ -4,7 +4,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 // Initial theme state
 const initialState = {
   theme: 'light', // light, dark, auto
-  colorScheme: 'orange', // orange, blue, green, purple
+  colorScheme: 'orange', // orange, bimage.pnglue, green, purple
   fontSize: 'medium', // small, medium, large
   reducedMotion: false,
   highContrast: false,
@@ -195,24 +195,32 @@ const updateCSSCustomProperties = (themeState, actualTheme) => {
   // Color scheme variables
   const colorSchemes = {
     orange: {
-      primary: '#f97316',
-      primaryDark: '#ea580c',
-      primaryLight: '#fed7aa',
+      primary: '#f97316',      // orange-500
+      primaryDark: '#ea580c',  // orange-600
+      primaryLight: '#fed7aa', // orange-200
+      accent: '#fb923c',       // orange-400
+      gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
     },
     blue: {
-      primary: '#3b82f6',
-      primaryDark: '#2563eb',
-      primaryLight: '#dbeafe',
+      primary: '#3b82f6',      // blue-500
+      primaryDark: '#2563eb',  // blue-600
+      primaryLight: '#dbeafe', // blue-200
+      accent: '#60a5fa',       // blue-400
+      gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
     },
     green: {
-      primary: '#10b981',
-      primaryDark: '#059669',
-      primaryLight: '#d1fae5',
+      primary: '#10b981',      // emerald-500
+      primaryDark: '#059669',  // emerald-600
+      primaryLight: '#a7f3d0', // emerald-200
+      accent: '#34d399',       // emerald-400
+      gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
     },
     purple: {
-      primary: '#8b5cf6',
-      primaryDark: '#7c3aed',
-      primaryLight: '#e9d5ff',
+      primary: '#8b5cf6',      // violet-500
+      primaryDark: '#7c3aed',  // violet-600
+      primaryLight: '#c4b5fd', // violet-300
+      accent: '#a78bfa',       // violet-400
+      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
     },
   };
 
@@ -221,6 +229,8 @@ const updateCSSCustomProperties = (themeState, actualTheme) => {
   root.style.setProperty('--color-primary', scheme.primary);
   root.style.setProperty('--color-primary-dark', scheme.primaryDark);
   root.style.setProperty('--color-primary-light', scheme.primaryLight);
+  root.style.setProperty('--color-accent', scheme.accent);
+  root.style.setProperty('--gradient-primary', scheme.gradient);
 
   // Font size variables
   const fontSizes = {

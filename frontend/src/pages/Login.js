@@ -3,22 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const { login, register, isLoading, error } = useAuth();
+  const { login, register, isLoading, error, clearError } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'student' });
   const [formError, setFormError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Clear any auth errors when login page mounts
+  React.useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setFormError(null);
+    setSuccessMessage(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setFormError(null);
+    setSuccessMessage(null);
     if (mode === 'login') {
       const { email, password } = form;
       if (!email || !password) {
@@ -48,7 +56,7 @@ const Login = () => {
       const result = await register({ username: name, email, password, role });
       if (result.success) {
         setMode('login');
-        setFormError('Account created! Please sign in.');
+        setSuccessMessage('Account created! Please sign in.');
         setForm({ name: '', email: '', password: '', confirmPassword: '', role: 'student' });
       } else {
         setFormError(result.error || 'Registration failed.');
@@ -130,8 +138,11 @@ const Login = () => {
               />
             </div>
           )}
-          {(formError || error) && (
+          {(formError || (error && error !== 'No token found')) && (
             <div className="text-red-600 text-sm text-center">{formError || error}</div>
+          )}
+          {successMessage && (
+            <div className="text-green-600 text-sm text-center">{successMessage}</div>
           )}
           <button
             type="submit"
@@ -150,7 +161,7 @@ const Login = () => {
               <button
                 type="button"
                 className="text-blue-600 hover:underline font-medium"
-                onClick={() => { setMode('register'); setFormError(null); }}
+                onClick={() => { setMode('register'); setFormError(null); setSuccessMessage(null); }}
               >
                 Create Account
               </button>
@@ -161,7 +172,7 @@ const Login = () => {
               <button
                 type="button"
                 className="text-blue-600 hover:underline font-medium"
-                onClick={() => { setMode('login'); setFormError(null); }}
+                onClick={() => { setMode('login'); setFormError(null); setSuccessMessage(null); }}
               >
                 Sign In
               </button>

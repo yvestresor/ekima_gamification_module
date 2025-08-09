@@ -17,24 +17,71 @@ const Subjects = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Statistics state
+  const [stats, setStats] = useState({
+    totalSubjects: 0,
+    totalTopics: 0,
+    totalContent: '0h',
+    alignment: 'NECTA'
+  });
+  
   // CRUD state
   const [crudLoading, setCrudLoading] = useState(false);
   const [crudError, setCrudError] = useState(null);
   const [crudSuccess, setCrudSuccess] = useState(null);
 
-  useEffect(() => {
-    // Fetch subjects from backend
-    setIsLoading(true);
-    contentAPI.getSubjects()
-      .then(res => {
-        setAllSubjects(res.data);
-        setFilteredSubjects(res.data);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        setError('Failed to load subjects');
-        setIsLoading(false);
+  // Function to calculate statistics from subjects data
+  const calculateStatistics = async (subjects) => {
+    try {
+      // Fetch topics to get accurate count
+      const topicsRes = await contentAPI.getTopics();
+      const topics = topicsRes.data || [];
+
+      // Calculate total content hours from subjects
+      const totalHours = subjects.reduce((total, subject) => {
+        // If subject has duration, use it; otherwise estimate based on topics count
+        const subjectHours = subject.duration || (subject.topicCount || 0) * 2; // 2 hours per topic estimate
+        return total + subjectHours;
+      }, 0);
+
+      setStats({
+        totalSubjects: subjects.length,
+        totalTopics: topics.length,
+        totalContent: `${totalHours}h`,
+        alignment: 'NECTA' // This could be dynamic based on curriculum data
       });
+    } catch (error) {
+      console.error('Failed to fetch statistics:', error);
+      // Set fallback values with subjects data
+      setStats({
+        totalSubjects: subjects.length,
+        totalTopics: 0,
+        totalContent: '0h',
+        alignment: 'NECTA'
+      });
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch subjects
+        const res = await contentAPI.getSubjects();
+        const subjects = res.data || [];
+        setAllSubjects(subjects);
+        setFilteredSubjects(subjects);
+        
+        // Calculate statistics with the fetched subjects
+        await calculateStatistics(subjects);
+      } catch (err) {
+        setError('Failed to load subjects');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -163,7 +210,7 @@ const Subjects = () => {
             <div className="flex items-center">
               <BookOpen className="w-8 h-8 text-blue-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{allSubjects.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalSubjects}</p>
                 <p className="text-sm text-gray-600">Total Subjects</p>
               </div>
             </div>
@@ -173,7 +220,7 @@ const Subjects = () => {
             <div className="flex items-center">
               <TrendingUp className="w-8 h-8 text-green-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">125</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalTopics}</p>
                 <p className="text-sm text-gray-600">Total Topics</p>
               </div>
             </div>
@@ -183,7 +230,7 @@ const Subjects = () => {
             <div className="flex items-center">
               <Clock className="w-8 h-8 text-orange-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">565h</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalContent}</p>
                 <p className="text-sm text-gray-600">Total Content</p>
               </div>
             </div>
@@ -193,7 +240,7 @@ const Subjects = () => {
             <div className="flex items-center">
               <Star className="w-8 h-8 text-yellow-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">NECTA</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.alignment}</p>
                 <p className="text-sm text-gray-600">Aligned</p>
               </div>
             </div>

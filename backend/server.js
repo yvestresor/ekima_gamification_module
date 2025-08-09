@@ -9,7 +9,8 @@ const cors = require('cors');
 
 // Allow requests from your frontend origin
 app.use(cors({
-  origin: 'https://ekima-gamification-module.vercel.app',
+  origin: 'http://localhost:3000',
+  // origin: 'https://ekima-gamification-module.vercel.app/', // Uncomment this line for production
   credentials: true // if you use cookies/sessions
 }));
 
@@ -31,6 +32,7 @@ app.use('/api/recommendation', require('./routes/recommendation'));
 app.use('/api/badge', require('./routes/badge'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/progress', require('./routes/progress'));
+app.use('/api/notifications', require('./routes/notification'));
 
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {

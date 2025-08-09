@@ -34,6 +34,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useProgress } from '../../context/ProgressContext';
 import { useGamification } from '../../hooks/useGamification';
+import { userAPI } from '../../services/api';
 
 // Import components
 import ProgressTracker from '../learning/ProgressTracker';
@@ -78,8 +79,8 @@ const UserProfile = ({
     const loadProfile = async () => {
       setIsLoading(true);
       try {
-        if (userId && userId !== currentUser?.id) {
-          // Load other user's profile (would come from API)
+        if (userId && userId !== currentUser?._id) {
+          // Load other user's profile from API
           const userData = await fetchUserProfile(userId);
           setProfileUser(userData);
         } else {
@@ -96,24 +97,16 @@ const UserProfile = ({
     loadProfile();
   }, [userId, currentUser]);
 
-  // Mock function to fetch user profile
+  // Function to fetch user profile from API
   const fetchUserProfile = async (id) => {
-    // In real app, this would be an API call
-    return {
-      id,
-      name: 'Alex Student',
-      email: 'alex@student.com',
-      avatar: '/api/placeholder/100/100',
-      bio: 'Passionate learner exploring science and mathematics. Love solving complex problems!',
-      location: 'Dar es Salaam, Tanzania',
-      school: 'Mwalimu Secondary School',
-      grade: 'Form 4',
-      joinedAt: '2024-01-15',
-      isPublic: true,
-      followers: 156,
-      following: 89,
-      interests: ['Mathematics', 'Physics', 'Computer Science']
-    };
+    try {
+      // Use the userAPI to fetch real user data
+      const response = await userAPI.getById(id);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
   };
 
   // Calculate performance metrics
@@ -152,7 +145,7 @@ const UserProfile = ({
     );
   }
 
-  const isOwnProfile = !userId || userId === currentUser?.id;
+  const isOwnProfile = !userId || userId === currentUser?._id;
 
   // Mini variant for mentions/lists
   if (variant === 'mini') {
@@ -160,7 +153,7 @@ const UserProfile = ({
       <div className="flex items-center space-x-3">
         <div className="relative">
           <img
-            src={profileUser.avatar}
+            src={profileUser.avatar || profileUser.profilePic || '/api/placeholder/100/100'}
             alt={profileUser.name}
             className="w-8 h-8 rounded-full object-cover"
           />
@@ -182,12 +175,12 @@ const UserProfile = ({
   if (variant === 'card') {
     return (
       <div className="bg-white rounded-xl p-6 border hover:shadow-lg transition-all cursor-pointer"
-           onClick={() => navigate(`/profile/${profileUser.id}`)}>
+           onClick={() => navigate(`/profile/${profileUser._id || profileUser.id}`)}>
         {/* Header */}
         <div className="text-center mb-4">
           <div className="relative inline-block">
             <img
-              src={profileUser.avatar}
+              src={profileUser.avatar || profileUser.profilePic || '/api/placeholder/100/100'}
               alt={profileUser.name}
               className="w-16 h-16 rounded-full object-cover mx-auto mb-3"
             />
@@ -250,7 +243,7 @@ const UserProfile = ({
         <div className="flex items-center space-x-3">
           <div className="relative">
             <img
-              src={profileUser.avatar}
+              src={profileUser.avatar || profileUser.profilePic || '/api/placeholder/100/100'}
               alt={profileUser.name}
               className="w-12 h-12 rounded-full object-cover"
             />
@@ -319,7 +312,7 @@ const UserProfile = ({
           <div className="text-center md:text-left">
             <div className="relative inline-block">
               <img
-                src={profileUser.avatar}
+                src={profileUser.avatar || profileUser.profilePic || '/api/placeholder/100/100'}
                 alt={profileUser.name}
                 className="w-24 h-24 rounded-full object-cover mx-auto md:mx-0"
               />

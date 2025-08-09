@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { userAPI } from '../services/api';
 import { authAPI } from '../services/api';
 
@@ -116,15 +116,43 @@ const AuthContext = createContext();
 // AuthProvider component
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const userLoadedRef = useRef(false);
+
+  // Load user function
+  const loadUser = useCallback(async () => {
+    if (userLoadedRef.current) return; // Prevent multiple calls
+    
+    try {
+      userLoadedRef.current = true;
+      dispatch({ type: AUTH_ACTIONS.LOAD_USER_START });
+      const response = await authAPI.getMe();
+      dispatch({
+        type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
+        payload: response.data
+      });
+    } catch (error) {
+      userLoadedRef.current = false; // Reset on error
+      const errorMessage = error.response?.data?.message || 'Failed to load user';
+      dispatch({
+        type: AUTH_ACTIONS.LOAD_USER_FAILURE,
+        payload: errorMessage
+      });
+      localStorage.removeItem('auth_token');
+    }
+  }, []);
 
   // Load user on app start if token exists
   useEffect(() => {
-    if (state.token) {
+    const token = localStorage.getItem('auth_token');
+    if (token && !state.user && !userLoadedRef.current) {
       loadUser();
-    } else {
-      dispatch({ type: AUTH_ACTIONS.LOAD_USER_FAILURE, payload: 'No token found' });
+    } else if (!token) {
+      dispatch({ 
+        type: AUTH_ACTIONS.LOAD_USER_FAILURE, 
+        payload: null
+      });
     }
-  }, []);
+  }, []); // Only run once on mount
 
   // Login function
   const login = async (credentials) => {
@@ -133,6 +161,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login(credentials);
       const { token, user } = response.data;
       localStorage.setItem('auth_token', token);
+      userLoadedRef.current = true; // Mark user as loaded since we got it from login
       dispatch({
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
         payload: { user, token }
@@ -153,8 +182,9 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
       await authAPI.register(userData);
-      // Optionally, auto-login after registration
-      return await login({ email: userData.email, password: userData.password });
+      // Return success without auto-login
+      dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
+      return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
       dispatch({
@@ -165,39 +195,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Load user function
-  const loadUser = async () => {
-    try {
-      dispatch({ type: AUTH_ACTIONS.LOAD_USER_START });
-      const response = await authAPI.getCurrentUser();
-      dispatch({
-        type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
-        payload: response.data
-      });
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to load user';
-      dispatch({
-        type: AUTH_ACTIONS.LOAD_USER_FAILURE,
-        payload: errorMessage
-      });
-      localStorage.removeItem('auth_token');
-    }
-  };
+
 
   // Logout function
   const logout = () => {
     localStorage.removeItem('auth_token');
+    userLoadedRef.current = false; // Reset ref on logout
     dispatch({ type: AUTH_ACTIONS.LOGOUT });
   };
 
   // Update user profile
   const updateProfile = async (userData) => {
     try {
-      // In real implementation: const response = await userAPI.updateProfile(userData);
+      const response = await userAPI.updateProfile(userData);
       
       dispatch({
         type: AUTH_ACTIONS.UPDATE_USER,
-        payload: userData
+        payload: response.data
       });
 
       return { success: true };

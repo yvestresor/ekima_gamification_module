@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Medal, Award, TrendingUp, Crown, Zap, Star, Users } from 'lucide-react';
+import { Trophy, Medal, Award, TrendingUp, Crown, Zap, Star, Users, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { userAPI, progressAPI } from '../../services/api';
 
 const Leaderboard = ({ 
   users = [], 
@@ -10,85 +12,90 @@ const Leaderboard = ({
   maxDisplay = 10,
   compact = false 
 }) => {
+  const navigate = useNavigate();
   const [sortedUsers, setSortedUsers] = useState([]);
   const [currentUserRank, setCurrentUserRank] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
 
-  // Mock leaderboard data for demonstration
-  const mockUsers = users.length === 0 ? [
-    {
-      _id: "user1",
-      name: "Amelia Johnson",
-      username: "amelia_j",
-      avatar: "👩‍🎓",
-      xp: 2850,
-      gems: 450,
-      streak: 15,
-      completion: 85,
-      school: "Dar es Salaam High School",
-      level: 8
-    },
-    {
-      _id: "user2", 
-      name: "David Mwalimu",
-      username: "david_m",
-      avatar: "👨‍🎓",
-      xp: 2720,
-      gems: 420,
-      streak: 12,
-      completion: 78,
-      school: "Dodoma Secondary",
-      level: 7
-    },
-    {
-      _id: "665f1fab9c934afcd203a2aa", // Current user
-      name: "Yves-tresor Nsabimana",
-      username: "yves_tresor",
-      avatar: "👤",
-      xp: 1250,
-      gems: 150,
-      streak: 7,
-      completion: 68,
-      school: "Riviera High School",
-      level: 5
-    },
-    {
-      _id: "user4",
-      name: "Sarah Kilimanjaro",
-      username: "sarah_k",
-      avatar: "👩‍💻",
-      xp: 1180,
-      gems: 140,
-      streak: 9,
-      completion: 62,
-      school: "Arusha International",
-      level: 4
-    },
-    {
-      _id: "user5",
-      name: "John Serengeti",
-      username: "john_s",
-      avatar: "👨‍🔬",
-      xp: 980,
-      gems: 120,
-      streak: 5,
-      completion: 55,
-      school: "Mwanza Science School",
-      level: 3
+  // Fetch users data only once when component mounts
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchUsers = async () => {
+      if (!isMounted) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await userAPI.getAll();
+        const fetchedUsers = response.data || [];
+        
+        if (!isMounted) return;
+        
+        // Transform user data (simplified to avoid too many API calls)
+        const transformedUsers = fetchedUsers.map(user => ({
+          ...user,
+          _id: user._id,
+          name: user.name || user.username || 'Unknown User',
+          xp: user.xp || 0,
+          gems: user.gems || 0,
+          streak: user.streak || 0,
+          completion: Math.floor(Math.random() * 100), // Temporary: use random completion
+          level: user.level_number || 1,
+          avatar: user.profilePic || null
+        }));
+        
+        setAllUsers(transformedUsers);
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error fetching users:', error);
+          setError('Failed to load leaderboard data');
+          setAllUsers([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Only fetch if users are not provided as props
+    if (users.length > 0) {
+      // Use provided users and transform them
+      const transformedUsers = users.map(user => ({
+        ...user,
+        xp: user.xp || 0,
+        gems: user.gems || 0,
+        streak: user.streak || 0,
+        completion: user.completion || 0,
+        level: user.level_number || user.level || 1,        avatar: user.profilePic || null
+      }));
+      setAllUsers(transformedUsers);
+      setLoading(false);
+    } else {
+      fetchUsers();
     }
-  ] : users;
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - only run once
 
   useEffect(() => {
     // Sort users based on selected type
-    const sorted = [...mockUsers].sort((a, b) => {
+    const sorted = [...allUsers].sort((a, b) => {
       switch (type) {
         case 'gems':
-          return b.gems - a.gems;
+          return (b.gems || 0) - (a.gems || 0);
         case 'streak':
-          return b.streak - a.streak;
+          return (b.streak || 0) - (a.streak || 0);
         case 'completion':
-          return b.completion - a.completion;
+          return (b.completion || 0) - (a.completion || 0);
         default: // xp
-          return b.xp - a.xp;
+          return (b.xp || 0) - (a.xp || 0);
       }
     });
 
@@ -99,7 +106,7 @@ const Leaderboard = ({
       const rank = sorted.findIndex(user => user._id === currentUserId) + 1;
       setCurrentUserRank(rank > 0 ? rank : null);
     }
-  }, [mockUsers, type, currentUserId, showCurrentUser]);
+  }, [allUsers, type, currentUserId, showCurrentUser]);
 
   const getRankIcon = (rank) => {
     switch (rank) {
@@ -168,6 +175,44 @@ const Leaderboard = ({
 
   const displayUsers = sortedUsers.slice(0, maxDisplay);
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border p-4">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          <span className="ml-2 text-gray-600">Loading leaderboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border p-4">
+        <div className="text-center py-8">
+          <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+          <p className="text-gray-600 mb-2">Unable to load leaderboard</p>
+          <p className="text-sm text-gray-500">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (sortedUsers.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border p-4">
+        <div className="text-center py-8">
+          <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+          <p className="text-gray-600 mb-2">No users found</p>
+          <p className="text-sm text-gray-500">Be the first to start learning!</p>
+        </div>
+      </div>
+    );
+  }
+
   if (compact) {
     return (
       <div className="bg-white rounded-lg border p-4">
@@ -215,6 +260,17 @@ const Leaderboard = ({
             </div>
           </div>
         )}
+
+        {/* View All Button */}
+        <div className="mt-4 pt-3 border-t border-gray-200">
+          <button
+            onClick={() => navigate('/leaderboards')}
+            className="w-full flex items-center justify-center space-x-2 text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors"
+          >
+            <span>View Full Leaderboard</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     );
   }
@@ -271,15 +327,25 @@ const Leaderboard = ({
                 </div>
 
                 {/* User Avatar */}
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl">
-                  {user.avatar || '👤'}
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.name || 'User'} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl">
+                      {user.name?.charAt(0)?.toUpperCase() || '👤'}
+                    </span>
+                  )}
                 </div>
 
                 {/* User Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
                     <h3 className="font-semibold text-gray-900 truncate">
-                      {user.name}
+                      {user.username}
                       {isCurrentUser && (
                         <span className="ml-2 text-orange-600 text-sm">(You)</span>
                       )}
@@ -291,7 +357,7 @@ const Leaderboard = ({
                     )}
                   </div>
                   <p className="text-sm text-gray-600 truncate">
-                    {user.school} • Level {user.level}
+                    Level {user.level}
                   </p>
                 </div>
 
@@ -332,16 +398,26 @@ const Leaderboard = ({
                     #{currentUserRank}
                   </div>
                   
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl">
-                    {currentUser.avatar || '👤'}
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                    {currentUser.avatar ? (
+                      <img 
+                        src={currentUser.avatar} 
+                        alt={currentUser.name || 'User'} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xl">
+                        {currentUser.name?.charAt(0)?.toUpperCase() || '👤'}
+                      </span>
+                    )}
                   </div>
                   
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">
-                      {currentUser.name} (You)
+                      {currentUser.username} (You)
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {currentUser.school} • Level {currentUser.level}
+                      Level {currentUser.level}
                     </p>
                   </div>
                   
@@ -372,7 +448,75 @@ const Leaderboard = ({
 
 // Simple leaderboard for smaller spaces
 export const MiniLeaderboard = ({ users = [], type = 'xp' }) => {
-  const topUsers = users.sort((a, b) => b[type] - a[type]).slice(0, 3);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [leaderboardUsers, setLeaderboardUsers] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchUsers = async () => {
+      if (!isMounted) return;
+      
+      try {
+        setLoading(true);
+        
+        let usersToProcess = users;
+        if (users.length === 0) {
+          // Fetch users from API if not provided
+          const response = await userAPI.getAll();
+          usersToProcess = response.data || [];
+        }
+        
+        if (!isMounted) return;
+        
+        // Transform and sort users
+        const processedUsers = usersToProcess.map(user => ({
+          ...user,
+          _id: user._id,
+          xp: user.xp || 0,
+          gems: user.gems || 0,
+          streak: user.streak || 0,
+          name: user.name || user.username || 'Unknown User'
+        }));
+        
+        const sorted = processedUsers.sort((a, b) => (b[type] || 0) - (a[type] || 0));
+        setLeaderboardUsers(sorted.slice(0, 3));
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error fetching users for mini leaderboard:', error);
+          setLeaderboardUsers([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchUsers();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Remove users and type from dependencies to prevent infinite loops
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border p-4">
+        <h3 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+          <Trophy className="w-4 h-4 text-yellow-500" />
+          <span>Top 3</span>
+        </h3>
+        <div className="flex items-center justify-center py-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
+          <span className="ml-2 text-sm text-gray-600">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const topUsers = leaderboardUsers;
 
   return (
     <div className="bg-white rounded-lg border p-4">
@@ -381,7 +525,13 @@ export const MiniLeaderboard = ({ users = [], type = 'xp' }) => {
         <span>Top 3</span>
       </h3>
       
-      <div className="space-y-2">
+      {topUsers.length === 0 ? (
+        <div className="text-center py-4">
+          <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+          <p className="text-sm text-gray-500">No users yet</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
         {topUsers.map((user, index) => (
           <div key={user._id} className="flex items-center space-x-2">
             <div className={`
@@ -400,6 +550,18 @@ export const MiniLeaderboard = ({ users = [], type = 'xp' }) => {
             </span>
           </div>
         ))}
+      </div>
+      )}
+      
+      {/* View All Button */}
+      <div className="mt-3 pt-3 border-t border-gray-200">
+        <button
+          onClick={() => navigate('/leaderboards')}
+          className="w-full flex items-center justify-center space-x-2 text-xs text-orange-600 hover:text-orange-700 font-medium transition-colors"
+        >
+          <span>View All</span>
+          <ArrowRight className="w-3 h-3" />
+        </button>
       </div>
     </div>
   );

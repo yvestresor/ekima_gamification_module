@@ -619,7 +619,9 @@ const Videos = () => {
             <div className="flex items-center">
               <Users className="w-8 h-8 text-orange-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">12</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {new Set(videos.map(v => v.instructor).filter(Boolean)).size}
+                </p>
                 <p className="text-sm text-gray-600">Expert Instructors</p>
               </div>
             </div>

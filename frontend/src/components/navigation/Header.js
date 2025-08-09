@@ -11,14 +11,26 @@ import {
   Star,
   Trophy,
   Zap,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 const Header = ({ onMenuToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, getUserLevelInfo } = useAuth();
+  const { 
+    notifications, 
+    unreadCount, 
+    loading: notificationsLoading,
+    error: notificationsError,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    loadNotifications 
+  } = useNotifications();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -26,38 +38,53 @@ const Header = ({ onMenuToggle }) => {
 
   const levelInfo = getUserLevelInfo();
 
-  // Mock notifications data
-  const notifications = [
-    {
-      id: 1,
-      type: 'achievement',
-      title: 'New Achievement Unlocked!',
-      message: 'You earned the "Week Warrior" badge',
-      time: '5 minutes ago',
-      unread: true,
-      icon: '🏆'
-    },
-    {
-      id: 2,
-      type: 'recommendation',
-      title: 'New Topic Recommended',
-      message: 'Linear Equations - Perfect for your level',
-      time: '1 hour ago',
-      unread: true,
-      icon: '💡'
-    },
-    {
-      id: 3,
-      type: 'streak',
-      title: 'Streak Reminder',
-      message: 'Keep your 7-day streak alive!',
-      time: '2 hours ago',
-      unread: false,
-      icon: '🔥'
+  // Helper functions for notifications
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) {
+      await markAsRead(notification._id);
     }
-  ];
+    
+    // Handle navigation based on notification type
+    switch (notification.type) {
+      case 'achievement':
+        navigate('/profile?tab=achievements');
+        break;
+      case 'recommendation':
+        navigate('/');
+        break;
+      case 'streak':
+        navigate('/progress');
+        break;
+      case 'quiz':
+        navigate('/questions');
+        break;
+      default:
+        break;
+    }
+    setShowNotifications(false);
+  };
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const handleDeleteNotification = async (e, notificationId) => {
+    e.stopPropagation();
+    await deleteNotification(notificationId);
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'achievement':
+        return '🏆';
+      case 'recommendation':
+        return '💡';
+      case 'streak':
+        return '🔥';
+      case 'progress':
+        return '📈';
+      case 'quiz':
+        return '📝';
+      default:
+        return '📢';
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -157,43 +184,104 @@ const Header = ({ onMenuToggle }) => {
             {/* Notifications Dropdown */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
-                <div className="p-4 border-b border-gray-100">
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => loadNotifications()}
+                      disabled={notificationsLoading}
+                      className="text-xs text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
+                    >
+                      {notificationsLoading ? 'Loading...' : 'Refresh'}
+                    </button>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllAsRead}
+                        className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="max-h-96 overflow-y-auto">
-                  {notifications.map((notification) => (
-                    <div 
-                      key={notification.id}
-                      className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer ${
-                        notification.unread ? 'bg-blue-50' : ''
-                      }`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className="text-2xl">{notification.icon}</div>
-                        <div className="flex-1">
-                          <h4 className={`text-sm font-medium ${
-                            notification.unread ? 'text-gray-900' : 'text-gray-700'
-                          }`}>
-                            {notification.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-2">
-                            {notification.time}
-                          </p>
-                        </div>
-                        {notification.unread && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        )}
-                      </div>
+                  {notificationsLoading ? (
+                    <div className="p-4 text-center text-gray-500">
+                      Loading notifications...
                     </div>
-                  ))}
+                  ) : notificationsError ? (
+                    <div className="p-4 text-center">
+                      <p className="text-red-600 text-sm">{notificationsError}</p>
+                      <button
+                        onClick={() => loadNotifications()}
+                        className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      <p>No notifications yet</p>
+                      <button
+                        onClick={() => loadNotifications()}
+                        className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Load Notifications
+                      </button>
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div 
+                        key={notification._id}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer group ${
+                          !notification.read ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="text-2xl">
+                            {notification.icon || getNotificationIcon(notification.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`text-sm font-medium ${
+                              !notification.read ? 'text-gray-900' : 'text-gray-700'
+                            }`}>
+                              {notification.title}
+                            </h4>
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-2">
+                              {notification.timeAgo || new Date(notification.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            )}
+                            <button
+                              onClick={(e) => handleDeleteNotification(e, notification._id)}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity"
+                              title="Delete notification"
+                            >
+                              <Trash2 className="w-3 h-3 text-red-500" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
                 
                 <div className="p-4 border-t border-gray-100">
-                  <button className="w-full text-center text-sm text-orange-600 hover:text-orange-700 font-medium">
+                  <button 
+                    onClick={() => {
+                      navigate('/notifications');
+                      setShowNotifications(false);
+                    }}
+                    className="w-full text-center text-sm text-orange-600 hover:text-orange-700 font-medium"
+                  >
                     View All Notifications
                   </button>
                 </div>
@@ -208,7 +296,7 @@ const Header = ({ onMenuToggle }) => {
               className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                {user?.name?.charAt(0) || 'U'}
+                {user?.username?.charAt(0) || 'U'}
               </div>
               <ChevronDown className="w-4 h-4 text-gray-500" />
             </button>
@@ -220,10 +308,10 @@ const Header = ({ onMenuToggle }) => {
                 <div className="p-4 border-b border-gray-100">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                      {user?.name?.charAt(0) || 'U'}
+                      {user?.username?.charAt(0) || 'U'}
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900">{user?.name}</h4>
+                      <h4 className="font-medium text-gray-900">{user?.username}</h4>
                       <p className="text-sm text-gray-600">{user?.email}</p>
                     </div>
                   </div>
@@ -260,7 +348,7 @@ const Header = ({ onMenuToggle }) => {
                   
                   <button
                     onClick={() => {
-                      navigate('/profile?tab=achievements');
+                      navigate('/profile');
                       setShowUserMenu(false);
                     }}
                     className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

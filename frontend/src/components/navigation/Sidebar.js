@@ -23,7 +23,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedSections, setExpandedSections] = useState(['learning']);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const navigationItems = [
     {
@@ -49,6 +49,13 @@ const Sidebar = () => {
           label: 'My Progress', 
           icon: TrendingUp, 
           path: '/progress', 
+          badge: null 
+        },
+        { 
+          id: 'leaderboards', 
+          label: 'Leaderboards', 
+          icon: Trophy, 
+          path: '/leaderboards', 
           badge: null 
         }
       ]
@@ -162,11 +169,21 @@ const Sidebar = () => {
       <div className="p-4 border-b border-orange-400">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-            <User className="w-6 h-6" />
+            {user?.profilePic ? (
+              <img 
+                src={user.profilePic} 
+                alt="Profile" 
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-sm font-bold text-white">
+                {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Yves-tresor</p>
-            <p className="text-xs opacity-75">Student</p>
+            <p className="text-sm font-medium truncate">{user?.username || 'User'}</p>
+            <p className="text-xs opacity-75">{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Student'}</p>
           </div>
         </div>
         
@@ -174,14 +191,14 @@ const Sidebar = () => {
         <div className="mt-3 flex items-center justify-between text-xs">
           <div className="flex items-center space-x-1">
             <Star className="w-3 h-3" />
-            <span>150 Gems</span>
+            <span>{user?.gems || 0} Gems</span>
           </div>
           <div className="flex items-center space-x-1">
             <Trophy className="w-3 h-3" />
-            <span>Level 5</span>
+            <span>Level {user?.level_number || 1}</span>
           </div>
           <div className="text-orange-200">
-            7-day streak 🔥
+            {user?.streak || 0}-day streak 🔥
           </div>
         </div>
       </div>

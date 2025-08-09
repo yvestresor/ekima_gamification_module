@@ -37,6 +37,7 @@ import {
 // Import contexts and hooks
 import { useAuth } from '../../context/AuthContext';
 import { useGamification } from '../../hooks/useGamification';
+import { useTheme } from '../../context/ThemeContext';
 
 const UserSettings = ({ 
   variant = 'full', // 'full', 'compact', 'modal'
@@ -142,6 +143,20 @@ const UserSettings = ({
   // Contexts and hooks
   const { user, updateUserSettings } = useAuth();
   const { dailyGoals, updateDailyGoals } = useGamification();
+  const { 
+    theme, 
+    colorScheme, 
+    fontSize, 
+    reducedMotion,
+    highContrast,
+    compactMode,
+    setTheme, 
+    setColorScheme, 
+    setFontSize, 
+    toggleReducedMotion,
+    toggleHighContrast,
+    toggleCompactMode
+  } = useTheme();
 
   // Load current settings
   useEffect(() => {
@@ -161,13 +176,21 @@ const UserSettings = ({
             ...prev,
             profile: {
               ...prev.profile,
-              name: user.name || '',
+              username: user.username || '',
               email: user.email || '',
               bio: user.bio || '',
               location: user.location || '',
-              school: user.school || '',
               grade: user.grade || '',
               avatar: user.avatar || ''
+            },
+            appearance: {
+              ...prev.appearance,
+              theme,
+              colorScheme,
+              fontSize,
+              reducedMotion,
+              highContrast,
+              compactMode
             }
           }));
         }
@@ -179,10 +202,40 @@ const UserSettings = ({
     };
 
     loadSettings();
-  }, [user]);
+  }, [user, theme, colorScheme, fontSize, reducedMotion, highContrast, compactMode]);
 
   // Handle setting change
   const handleSettingChange = (category, key, value) => {
+    // Special handling for appearance settings - call theme context functions
+    if (category === 'appearance') {
+      switch (key) {
+        case 'theme':
+          setTheme(value);
+          break;
+        case 'colorScheme':
+          setColorScheme(value);
+          break;
+        case 'fontSize':
+          setFontSize(value);
+          break;
+        case 'reducedMotion':
+          if (value !== reducedMotion) {
+            toggleReducedMotion();
+          }
+          break;
+        case 'highContrast':
+          if (value !== highContrast) {
+            toggleHighContrast();
+          }
+          break;
+        case 'compactMode':
+          if (value !== compactMode) {
+            toggleCompactMode();
+          }
+          break;
+      }
+    }
+    
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -225,8 +278,7 @@ const UserSettings = ({
         await updateDailyGoals(settings.learning.dailyGoals);
       }
       
-      // Apply theme changes
-      applyThemeSettings();
+      // Theme changes are applied automatically via ThemeContext
       
       setHasUnsavedChanges(false);
       setSaveMessage('Settings saved successfully!');
@@ -241,32 +293,7 @@ const UserSettings = ({
     }
   };
 
-  // Apply theme settings
-  const applyThemeSettings = () => {
-    const { theme, colorScheme, fontSize, reducedMotion } = settings.appearance;
-    
-    // Apply theme
-    document.documentElement.classList.remove('light', 'dark');
-    if (theme === 'auto') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.add(prefersDark ? 'dark' : 'light');
-    } else {
-      document.documentElement.classList.add(theme);
-    }
-    
-    // Apply color scheme
-    document.documentElement.setAttribute('data-color-scheme', colorScheme);
-    
-    // Apply font size
-    document.documentElement.setAttribute('data-font-size', fontSize);
-    
-    // Apply motion preference
-    if (reducedMotion) {
-      document.documentElement.classList.add('reduce-motion');
-    } else {
-      document.documentElement.classList.remove('reduce-motion');
-    }
-  };
+  // Theme settings are now handled by ThemeContext
 
   // Reset to defaults
   const handleReset = () => {
@@ -324,9 +351,9 @@ const UserSettings = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                   <input
                     type="text"
-                    value={settings.profile.name}
-                    onChange={(e) => handleSettingChange('profile', 'name', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={settings.profile.username}
+                    onChange={(e) => handleSettingChange('profile', 'username', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
                 <div>
@@ -335,16 +362,7 @@ const UserSettings = ({
                     type="email"
                     value={settings.profile.email}
                     onChange={(e) => handleSettingChange('profile', 'email', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">School</label>
-                  <input
-                    type="text"
-                    value={settings.profile.school}
-                    onChange={(e) => handleSettingChange('profile', 'school', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
                 <div>
@@ -353,7 +371,7 @@ const UserSettings = ({
                     type="text"
                     value={settings.profile.grade}
                     onChange={(e) => handleSettingChange('profile', 'grade', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -362,7 +380,7 @@ const UserSettings = ({
                     value={settings.profile.bio}
                     onChange={(e) => handleSettingChange('profile', 'bio', e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     placeholder="Tell others about yourself..."
                   />
                 </div>
@@ -473,7 +491,7 @@ const UserSettings = ({
                   <select
                     value={settings.privacy.profileVisibility}
                     onChange={(e) => handleSettingChange('privacy', 'profileVisibility', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   >
                     <option value="public">Public - Anyone can see</option>
                     <option value="friends">Friends Only</option>
@@ -486,7 +504,7 @@ const UserSettings = ({
                   <select
                     value={settings.privacy.progressSharing}
                     onChange={(e) => handleSettingChange('privacy', 'progressSharing', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   >
                     <option value="public">Public</option>
                     <option value="friends">Friends Only</option>
@@ -529,7 +547,7 @@ const UserSettings = ({
                     max="300"
                     value={settings.learning.dailyGoals.studyTime}
                     onChange={(e) => handleNestedSettingChange('learning', 'dailyGoals', 'studyTime', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
                 <div>
@@ -540,7 +558,7 @@ const UserSettings = ({
                     max="10"
                     value={settings.learning.dailyGoals.chaptersTarget}
                     onChange={(e) => handleNestedSettingChange('learning', 'dailyGoals', 'chaptersTarget', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
               </div>
@@ -555,7 +573,7 @@ const UserSettings = ({
                   <select
                     value={settings.learning.preferences.difficulty}
                     onChange={(e) => handleNestedSettingChange('learning', 'preferences', 'difficulty', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   >
                     <option value="easy">Easy</option>
                     <option value="medium">Medium</option>
@@ -599,7 +617,7 @@ const UserSettings = ({
                   <button
                     key={value}
                     onClick={() => handleSettingChange('appearance', 'theme', value)}
-                    className={`p-4 border-2 rounded-lg text-center transition-colors ${
+                    className={`p-4 border-2 rounded-lg text-center text-black transition-colors ${
                       settings.appearance.theme === value
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
@@ -625,7 +643,7 @@ const UserSettings = ({
                   <button
                     key={value}
                     onClick={() => handleSettingChange('appearance', 'colorScheme', value)}
-                    className={`p-4 border-2 rounded-lg text-center transition-colors ${
+                    className={`p-4 border-2 rounded-lg text-center text-black transition-colors ${
                       settings.appearance.colorScheme === value
                         ? 'border-gray-900'
                         : 'border-gray-200 hover:border-gray-300'
@@ -647,7 +665,7 @@ const UserSettings = ({
                   <select
                     value={settings.appearance.fontSize}
                     onChange={(e) => handleSettingChange('appearance', 'fontSize', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   >
                     <option value="small">Small</option>
                     <option value="medium">Medium</option>
@@ -665,6 +683,38 @@ const UserSettings = ({
                       type="checkbox"
                       checked={settings.appearance.reducedMotion}
                       onChange={(e) => handleSettingChange('appearance', 'reducedMotion', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-gray-900">High Contrast</div>
+                    <div className="text-sm text-gray-600">Increase contrast for better visibility</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.appearance.highContrast}
+                      onChange={(e) => handleSettingChange('appearance', 'highContrast', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-gray-900">Compact Mode</div>
+                    <div className="text-sm text-gray-600">Reduce spacing for more content</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.appearance.compactMode}
+                      onChange={(e) => handleSettingChange('appearance', 'compactMode', e.target.checked)}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
