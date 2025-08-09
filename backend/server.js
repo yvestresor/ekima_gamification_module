@@ -9,7 +9,7 @@ const cors = require('cors');
 
 // Allow requests from your frontend origin
 app.use(cors({
-  origin: '',
+  origin: 'https://ekima-gamification-module.vercel.app',
   credentials: true // if you use cookies/sessions
 }));
 
