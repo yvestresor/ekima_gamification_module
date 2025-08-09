@@ -10,7 +10,7 @@ const cors = require('cors');
 // Allow requests from your frontend origin
 app.use(cors({
   // origin: 'http://localhost:3000',
-  origin: 'https://ekima-gamification-module.vercel.app/', // Uncomment this line for production
+  origin: 'https://ekima-gamification-module.vercel.app', // Uncomment this line for production
   credentials: true // if you use cookies/sessions
 }));
 
