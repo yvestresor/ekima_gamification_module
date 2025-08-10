@@ -294,14 +294,6 @@ const Navigation = ({ isSidebarOpen, setSidebarOpen }) => {
                 <User size={20} className="mr-3 text-gray-400 group-hover:text-gray-600" />
                 Profile
               </Link>
-              
-              <Link
-                to="/settings"
-                className="group flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors"
-              >
-                <Settings size={20} className="mr-3 text-gray-400 group-hover:text-gray-600" />
-                Settings
-              </Link>
 
               <Link
                 to="/help"
@@ -478,13 +470,6 @@ const Navigation = ({ isSidebarOpen, setSidebarOpen }) => {
                       >
                         <User size={16} className="mr-3" />
                         View Profile
-                      </Link>
-                      <Link
-                        to="/settings"
-                        className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <Settings size={16} className="mr-3" />
-                        Settings
                       </Link>
                       <Link
                         to="/help"

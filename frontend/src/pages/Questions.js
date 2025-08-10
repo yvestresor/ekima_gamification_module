@@ -814,40 +814,300 @@ const Questions = () => {
         )}
       </div>
 
-      {/* Add/Edit Question Modal (simple version, you can expand fields as needed) */}
+      {/* Add/Edit Question Modal */}
       {(showAddQuestionModal || showEditQuestionModal) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-lg w-full">
-            <h2 className="text-xl font-bold mb-4">{showAddQuestionModal ? 'Add Question' : 'Edit Question'}</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <Target className="w-6 h-6 mr-3 text-blue-600" />
+                  {showAddQuestionModal ? 'Add New Question' : 'Edit Question'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowAddQuestionModal(false);
+                    setShowEditQuestionModal(false);
+                    setEditQuestion(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
             <form onSubmit={e => { e.preventDefault(); showAddQuestionModal ? handleAddQuestion() : handleEditQuestion(); }}>
-              <input type="text" className="w-full mb-2 p-2 border rounded" placeholder="Question" value={questionForm.question} onChange={e => setQuestionForm(f => ({ ...f, question: e.target.value }))} required />
-              <select className="w-full mb-2 p-2 border rounded" value={questionForm.difficulty} onChange={e => setQuestionForm(f => ({ ...f, difficulty: e.target.value }))}>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-              <select className="w-full mb-2 p-2 border rounded" value={questionForm.type} onChange={e => setQuestionForm(f => ({ ...f, type: e.target.value }))}>
-                <option value="multiple_choice">Multiple Choice</option>
-                <option value="true_false">True/False</option>
-                <option value="short_answer">Short Answer</option>
-              </select>
-              {questionForm.type === 'multiple_choice' && questionForm.options.map((opt, idx) => (
-                <input key={idx} type="text" className="w-full mb-2 p-2 border rounded" placeholder={`Option ${idx + 1}`} value={opt} onChange={e => setQuestionForm(f => { const opts = [...f.options]; opts[idx] = e.target.value; return { ...f, options: opts }; })} required />
-              ))}
-              {questionForm.type === 'multiple_choice' && (
-                <select className="w-full mb-2 p-2 border rounded" value={questionForm.correctAnswer} onChange={e => setQuestionForm(f => ({ ...f, correctAnswer: Number(e.target.value) }))}>
-                  {questionForm.options.map((opt, idx) => (
-                    <option key={idx} value={idx}>{`Correct: Option ${idx + 1}`}</option>
-                  ))}
-                </select>
-              )}
-              <input type="number" className="w-full mb-2 p-2 border rounded" placeholder="Points" value={questionForm.points} onChange={e => setQuestionForm(f => ({ ...f, points: Number(e.target.value) }))} required />
-              <input type="number" className="w-full mb-2 p-2 border rounded" placeholder="Time Limit (seconds)" value={questionForm.timeLimit} onChange={e => setQuestionForm(f => ({ ...f, timeLimit: Number(e.target.value) }))} required />
-              <textarea className="w-full mb-2 p-2 border rounded" placeholder="Explanation (optional)" value={questionForm.explanation} onChange={e => setQuestionForm(f => ({ ...f, explanation: e.target.value }))} />
-              {/* Add more fields as needed */}
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={() => { setShowAddQuestionModal(false); setShowEditQuestionModal(false); setEditQuestion(null); }}>Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">{showAddQuestionModal ? 'Add' : 'Save'}</button>
+              <div className="px-6 py-6 space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Question Details
+                  </h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Question Text *</label>
+                    <textarea 
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none" 
+                      placeholder="Enter your question here. Make it clear and specific..." 
+                      value={questionForm.question} 
+                      onChange={e => setQuestionForm(f => ({ ...f, question: e.target.value }))} 
+                      required 
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                      <select 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={questionForm.subject} 
+                        onChange={e => setQuestionForm(f => ({ ...f, subject: e.target.value }))} 
+                        required
+                      >
+                        <option value="">Choose a subject...</option>
+                        {subjects.map(subj => (
+                          <option key={subj._id} value={subj._id}>{subj.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Topic</label>
+                      <select 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={questionForm.topic} 
+                        onChange={e => setQuestionForm(f => ({ ...f, topic: e.target.value }))} 
+                        disabled={!questionForm.subject}
+                      >
+                        <option value="">Choose a topic...</option>
+                        {topics.map(topic => (
+                          <option key={topic._id} value={topic._id}>{topic.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Question Configuration */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                    </svg>
+                    Question Configuration
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Question Type *</label>
+                      <select 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={questionForm.type} 
+                        onChange={e => setQuestionForm(f => ({ ...f, type: e.target.value }))}
+                      >
+                        <option value="multiple_choice">📝 Multiple Choice</option>
+                        <option value="true_false">✅ True/False</option>
+                        <option value="short_answer">💭 Short Answer</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty Level</label>
+                      <select 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={questionForm.difficulty} 
+                        onChange={e => setQuestionForm(f => ({ ...f, difficulty: e.target.value }))}
+                      >
+                        <option value="easy">🟢 Easy</option>
+                        <option value="medium">🟡 Medium</option>
+                        <option value="hard">🔴 Hard</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Points *</label>
+                      <input 
+                        type="number" 
+                        min={1} 
+                        max={100}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={questionForm.points} 
+                        onChange={e => setQuestionForm(f => ({ ...f, points: parseInt(e.target.value) }))} 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Time Limit (seconds)</label>
+                    <input 
+                      type="number" 
+                      min={10} 
+                      max={600}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                      value={questionForm.timeLimit} 
+                      onChange={e => setQuestionForm(f => ({ ...f, timeLimit: parseInt(e.target.value) }))} 
+                      required 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Recommended time for students to answer this question</p>
+                  </div>
+                </div>
+
+                {/* Answer Options (Multiple Choice) */}
+                {questionForm.type === 'multiple_choice' && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                      </svg>
+                      Answer Options
+                    </h3>
+
+                    <div className="space-y-3">
+                      {questionForm.options.map((opt, idx) => (
+                        <div key={idx}>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Option {idx + 1} {idx < 2 && <span className="text-red-500">*</span>}
+                          </label>
+                          <input 
+                            type="text" 
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                            placeholder={`Enter option ${idx + 1}...`} 
+                            value={opt} 
+                            onChange={e => setQuestionForm(f => { 
+                              const opts = [...f.options]; 
+                              opts[idx] = e.target.value; 
+                              return { ...f, options: opts }; 
+                            })} 
+                            required={idx < 2}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Correct Answer *</label>
+                      <select 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={questionForm.correctAnswer} 
+                        onChange={e => setQuestionForm(f => ({ ...f, correctAnswer: parseInt(e.target.value) }))}
+                      >
+                        {questionForm.options.map((opt, idx) => (
+                          <option key={idx} value={idx} disabled={!opt.trim()}>
+                            {opt.trim() ? `✓ Option ${idx + 1}: ${opt.substring(0, 30)}${opt.length > 30 ? '...' : ''}` : `Option ${idx + 1} (empty)`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* True/False Options */}
+                {questionForm.type === 'true_false' && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                      </svg>
+                      Correct Answer
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        className={`p-4 border-2 rounded-lg transition-colors ${
+                          questionForm.correctAnswer === 0
+                            ? 'border-green-500 bg-green-50 text-green-700'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        onClick={() => setQuestionForm(f => ({ ...f, correctAnswer: 0 }))}
+                      >
+                        <CheckCircle className="w-6 h-6 mx-auto mb-2" />
+                        <div className="font-medium">True</div>
+                      </button>
+                      <button
+                        type="button"
+                        className={`p-4 border-2 rounded-lg transition-colors ${
+                          questionForm.correctAnswer === 1
+                            ? 'border-red-500 bg-red-50 text-red-700'
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        onClick={() => setQuestionForm(f => ({ ...f, correctAnswer: 1 }))}
+                      >
+                        <X className="w-6 h-6 mx-auto mb-2" />
+                        <div className="font-medium">False</div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Explanation */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    Additional Information
+                  </h3>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Explanation (Optional)</label>
+                    <textarea 
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none" 
+                      placeholder="Provide an explanation for the correct answer. This will be shown to students after they answer..." 
+                      value={questionForm.explanation} 
+                      onChange={e => setQuestionForm(f => ({ ...f, explanation: e.target.value }))} 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Help students understand why the answer is correct</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-xl">
+                <div className="flex justify-end space-x-3">
+                  <button 
+                    type="button" 
+                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" 
+                    onClick={() => {
+                      setShowAddQuestionModal(false);
+                      setShowEditQuestionModal(false);
+                      setEditQuestion(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={questionCrudLoading || !questionForm.question || !questionForm.subject}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center"
+                  >
+                    {questionCrudLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Target className="w-4 h-4 mr-2" />
+                        {showAddQuestionModal ? 'Create Question' : 'Save Changes'}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

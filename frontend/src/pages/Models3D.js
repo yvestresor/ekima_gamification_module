@@ -726,25 +726,186 @@ const Models3D = () => {
         )}
       </div>
 
-      {/* Add/Edit 3D Model Modal (simple version, you can expand fields as needed) */}
+      {/* Add/Edit 3D Model Modal */}
       {(showAddModelModal || showEditModelModal) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-lg w-full">
-            <h2 className="text-xl font-bold mb-4">{showAddModelModal ? 'Add 3D Model' : 'Edit 3D Model'}</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <Box className="w-6 h-6 mr-3 text-blue-600" />
+                  {showAddModelModal ? 'Add New 3D Model' : 'Edit 3D Model'}
+                </h2>
+                <button
+                  onClick={() => { 
+                    setShowAddModelModal(false); 
+                    setShowEditModelModal(false); 
+                    setEditModel(null); 
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
             <form onSubmit={e => { e.preventDefault(); showAddModelModal ? handleAddModel() : handleEditModel(); }}>
-              <input type="text" className="w-full mb-2 p-2 border rounded" placeholder="Title" value={modelForm.title} onChange={e => setModelForm(f => ({ ...f, title: e.target.value }))} required />
-              <textarea className="w-full mb-2 p-2 border rounded" placeholder="Description" value={modelForm.description} onChange={e => setModelForm(f => ({ ...f, description: e.target.value }))} required />
-              <input type="number" className="w-full mb-2 p-2 border rounded" placeholder="Duration (min)" value={modelForm.duration} onChange={e => setModelForm(f => ({ ...f, duration: Number(e.target.value) }))} required />
-              <select className="w-full mb-2 p-2 border rounded" value={modelForm.difficulty} onChange={e => setModelForm(f => ({ ...f, difficulty: e.target.value }))}>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-              <input type="text" className="w-full mb-2 p-2 border rounded" placeholder="Tags (comma separated)" value={modelForm.tags.join(', ')} onChange={e => setModelForm(f => ({ ...f, tags: e.target.value.split(',').map(t => t.trim()) }))} />
-              {/* Add more fields as needed */}
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={() => { setShowAddModelModal(false); setShowEditModelModal(false); setEditModel(null); }}>Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">{showAddModelModal ? 'Add' : 'Save'}</button>
+              <div className="px-6 py-6 space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Basic Information
+                  </h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">3D Model Title *</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                      placeholder="Enter an engaging title for your 3D model" 
+                      value={modelForm.title} 
+                      onChange={e => setModelForm(f => ({ ...f, title: e.target.value }))} 
+                      required 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                    <textarea 
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none" 
+                      placeholder="Describe what students will learn from this 3D model..." 
+                      value={modelForm.description} 
+                      onChange={e => setModelForm(f => ({ ...f, description: e.target.value }))} 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                {/* Configuration */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                    </svg>
+                    Configuration
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes) *</label>
+                      <input 
+                        type="number" 
+                        min={1} 
+                        max={120}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={modelForm.duration} 
+                        onChange={e => setModelForm(f => ({ ...f, duration: parseInt(e.target.value) }))} 
+                        required 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty Level</label>
+                      <select 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={modelForm.difficulty} 
+                        onChange={e => setModelForm(f => ({ ...f, difficulty: e.target.value }))}
+                      >
+                        <option value="easy">🟢 Easy</option>
+                        <option value="medium">🟡 Medium</option>
+                        <option value="hard">🔴 Hard</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">File Size</label>
+                      <input 
+                        type="text" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        placeholder="e.g. 15.2 MB"
+                        value={modelForm.downloadSize} 
+                        onChange={e => setModelForm(f => ({ ...f, downloadSize: e.target.value }))} 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    Tags & Properties
+                  </h3>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                      placeholder="anatomy, molecule, physics, interactive" 
+                      value={modelForm.tags.join(', ')} 
+                      onChange={e => setModelForm(f => ({ ...f, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) }))} 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Separate tags with commas</p>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      checked={modelForm.hasAnimation}
+                      onChange={e => setModelForm(f => ({ ...f, hasAnimation: e.target.checked }))}
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Has Animation</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-xl">
+                <div className="flex justify-end space-x-3">
+                  <button 
+                    type="button" 
+                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" 
+                    onClick={() => { 
+                      setShowAddModelModal(false); 
+                      setShowEditModelModal(false); 
+                      setEditModel(null); 
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={modelCrudLoading || !modelForm.title || !modelForm.description}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center"
+                  >
+                    {modelCrudLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Box className="w-4 h-4 mr-2" />
+                        {showAddModelModal ? 'Create 3D Model' : 'Save Changes'}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

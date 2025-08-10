@@ -4,6 +4,7 @@ const videoController = require('../controllers/videoController');
 
 router.get('/', videoController.getAllVideos);
 router.post('/', videoController.createVideo);
+router.get('/metadata', videoController.getVideoMetadata);
 router.get('/:id', videoController.getVideoById);
 router.put('/:id', videoController.updateVideo);
 router.delete('/:id', videoController.deleteVideo);

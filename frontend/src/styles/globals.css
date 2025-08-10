@@ -423,3 +423,8 @@ a:focus {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Hide scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}

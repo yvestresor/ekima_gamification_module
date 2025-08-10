@@ -40,6 +40,32 @@ export const userAPI = {
   delete: (id) => apiClient.delete(`/users/${id}`),
 };
 
+// =============== UPLOADS ===============
+export const uploadAPI = {
+  uploadProfilePic: (file) => {
+    const form = new FormData();
+    form.append('avatar', file);
+    return apiClient.post('/upload/profile-pic', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 15000,
+    });
+  },
+  uploadVideo: (file, onProgress) => {
+    const form = new FormData();
+    form.append('video', file);
+    return apiClient.post('/upload/video', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0,
+      onUploadProgress: (evt) => {
+        if (onProgress && evt.total) {
+          const percent = Math.round((evt.loaded * 100) / evt.total);
+          onProgress(percent);
+        }
+      }
+    });
+  },
+};
+
 // =============== SUBJECT/TOPIC/CHAPTER ===============
 export const contentAPI = {
   // Subjects
@@ -127,6 +153,7 @@ export const videoAPI = {
   create: (data) => apiClient.post('/video', data),
   update: (id, data) => apiClient.put(`/video/${id}`, data),
   delete: (id) => apiClient.delete(`/video/${id}`),
+  getMetadata: (url) => apiClient.get('/video/metadata', { params: { url } }),
 };
 
 // =============== QUESTIONS ===============

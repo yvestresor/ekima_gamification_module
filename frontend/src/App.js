@@ -14,7 +14,7 @@ import Subjects from './pages/Subjects';
 import Subject from './pages/Subject';
 import Topic from './pages/Topic';
 import Chapter from './pages/Chapter';
-import Progress from './pages/Progress';
+import Progress from './pages/Progress';  
 import Experiments from './pages/Experiments';
 import Videos from './pages/Videos';
 import Simulations from './pages/Simulations';
@@ -24,6 +24,7 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Leaderboards from './pages/Leaderboards';
 import Notifications from './pages/Notifications';
+import BadgeManagement from './pages/BadgeManagement';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import SubjectFormPage from './pages/SubjectFormPage';
 import TopicFormPage from './pages/TopicFormPage';
@@ -70,6 +71,7 @@ function App() {
                             <Route path="/leaderboards" element={<Leaderboards />} />
                             <Route path="/notifications" element={<Notifications />} />
                             <Route path="/profile" element={<Profile />} />
+                            <Route path="/badges" element={<BadgeManagement />} />
                             <Route path="/topics/new" element={<TopicFormPage mode="add" />} />
                             <Route path="/topics/:topicId/edit" element={<TopicFormPage mode="edit" />} />
                             <Route path="/chapters/new" element={<ChapterFormPage mode="add" />} />

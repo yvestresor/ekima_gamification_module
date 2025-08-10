@@ -46,9 +46,6 @@ const Header = ({ onMenuToggle }) => {
     
     // Handle navigation based on notification type
     switch (notification.type) {
-      case 'achievement':
-        navigate('/profile?tab=achievements');
-        break;
       case 'recommendation':
         navigate('/');
         break;
@@ -344,28 +341,6 @@ const Header = ({ onMenuToggle }) => {
                   >
                     <User className="w-4 h-4" />
                     <span>View Profile</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      navigate('/profile');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <Trophy className="w-4 h-4" />
-                    <span>Achievements</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      navigate('/settings');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
                   </button>
                 </div>
 

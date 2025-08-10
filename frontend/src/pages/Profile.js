@@ -1,6 +1,6 @@
 // src/pages/Profile.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User,
@@ -38,14 +38,15 @@ import {
   Smartphone,
   Monitor,
   Palette,
-  Trophy
+  Trophy,
+  ChevronDown
 } from 'lucide-react';
 
 // Import contexts and hooks
 import { useAuth } from '../context/AuthContext';
 import { useProgress } from '../context/ProgressContext';
 import { useGamification } from '../hooks/useGamification';
-import { userAPI, quizAttemptAPI, badgeAPI, recommendationAPI } from '../services/api';
+import { userAPI, quizAttemptAPI, recommendationAPI } from '../services/api';
 
 // Import components
 import UserDashboard from '../components/user/UserDashboard';
@@ -106,6 +107,8 @@ const Profile = () => {
   } = useGamification();
 
   // Initialize profile form
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     if (user) {
       setProfileForm({
@@ -221,76 +224,6 @@ const Profile = () => {
       setUserCrudError('Failed to delete user');
     } finally {
       setUserCrudLoading(false);
-    }
-  };
-
-  // Badge/Achievement management state
-  const [badges, setBadges] = useState([]);
-  const [badgeCrudLoading, setBadgeCrudLoading] = useState(false);
-  const [badgeCrudError, setBadgeCrudError] = useState(null);
-  const [badgeCrudSuccess, setBadgeCrudSuccess] = useState(null);
-  const [showAddBadgeModal, setShowAddBadgeModal] = useState(false);
-  const [showEditBadgeModal, setShowEditBadgeModal] = useState(false);
-  const [editBadge, setEditBadge] = useState(null);
-  const [badgeForm, setBadgeForm] = useState({ name: '', description: '', icon: '', xp_reward: 0, gems_reward: 0, rarity: 'common', requirement: '', type: 'completion' });
-
-  // Fetch badges for management
-  useEffect(() => {
-    if (activeTab === 'achievements' && user && (user.role === 'admin' || user.role === 'teacher')) {
-      setBadgeCrudLoading(true);
-      badgeAPI.getAll()
-        .then(res => { setBadges(res.data || []); setBadgeCrudLoading(false); })
-        .catch(err => { setBadgeCrudError('Failed to load badges'); setBadgeCrudLoading(false); });
-    }
-  }, [activeTab, user]);
-
-  // Badge CRUD handlers
-  const handleAddBadge = async () => {
-    setBadgeCrudLoading(true); setBadgeCrudError(null); setBadgeCrudSuccess(null);
-    try {
-      await badgeAPI.create(badgeForm);
-      setBadgeCrudSuccess('Badge added successfully');
-      setShowAddBadgeModal(false);
-      setBadgeForm({ name: '', description: '', icon: '', xp_reward: 0, gems_reward: 0, rarity: 'common', requirement: '', type: 'completion' });
-      // Refresh badges
-      const res = await badgeAPI.getAll();
-      setBadges(res.data);
-    } catch (err) {
-      setBadgeCrudError('Failed to add badge');
-    } finally {
-      setBadgeCrudLoading(false);
-    }
-  };
-  const handleEditBadge = async () => {
-    setBadgeCrudLoading(true); setBadgeCrudError(null); setBadgeCrudSuccess(null);
-    try {
-      await badgeAPI.update(editBadge._id, badgeForm);
-      setBadgeCrudSuccess('Badge updated successfully');
-      setShowEditBadgeModal(false);
-      setEditBadge(null);
-      setBadgeForm({ name: '', description: '', icon: '', xp_reward: 0, gems_reward: 0, rarity: 'common', requirement: '', type: 'completion' });
-      // Refresh badges
-      const res = await badgeAPI.getAll();
-      setBadges(res.data);
-    } catch (err) {
-      setBadgeCrudError('Failed to update badge');
-    } finally {
-      setBadgeCrudLoading(false);
-    }
-  };
-  const handleDeleteBadge = async (badgeId) => {
-    if (!window.confirm('Are you sure you want to delete this badge?')) return;
-    setBadgeCrudLoading(true); setBadgeCrudError(null); setBadgeCrudSuccess(null);
-    try {
-      await badgeAPI.delete(badgeId);
-      setBadgeCrudSuccess('Badge deleted successfully');
-      // Refresh badges
-      const res = await badgeAPI.getAll();
-      setBadges(res.data);
-    } catch (err) {
-      setBadgeCrudError('Failed to delete badge');
-    } finally {
-      setBadgeCrudLoading(false);
     }
   };
 
@@ -534,18 +467,6 @@ const Profile = () => {
               </button>
               <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              {!isEditing && activeTab === 'overview' && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                >
-                  <Edit3 size={16} className="mr-2" />
-                  Edit Profile
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Tab Navigation */}
@@ -579,177 +500,155 @@ const Profile = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* Profile Header Card */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border">
-              <div className="flex flex-col md:flex-row md:items-start md:space-x-6">
-                {/* Avatar and Basic Info */}
-                <div className="text-center md:text-left">
-                  <div className="relative inline-block">
-                    <img
-                      src={user?.profilePic || user?.avatar || '/api/placeholder/100/100'}
-                      alt={user?.name || user?.username}
-                      className="w-24 h-24 rounded-full object-cover mx-auto md:mx-0"
-                    />
-                    {isEditing && (
-                      <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors">
-                        <Camera size={16} />
-                      </button>
-                    )}
-                    {levelInfo && (
-                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-500 rounded-full border-2 border-white flex items-center justify-center">
-                        <span className="text-sm font-bold text-white">{levelInfo.level}</span>
+            {/* Profile Header Card - IMPROVED VERSION */}
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              {/* Cover Background */}
+              <div className="h-32 relative">
+                <div className="absolute inset-0 bg-black bg-opacity-10"></div>
+              </div>
+
+              <div className="px-6 pb-6">
+                <div className="flex flex-col md:flex-row md:items-start md:space-x-6">
+                  {/* Avatar Section */}
+                  <div className="flex flex-col items-center md:items-start -mt-16 relative z-10">
+                    <div className="relative group">
+                      <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl bg-gradient-to-br from-orange-100 to-yellow-100 flex items-center justify-center text-4xl font-bold text-orange-600 overflow-hidden">
+                        {user?.profilePic || user?.avatar ? (
+                          <img 
+                            src={user.profilePic || user.avatar} 
+                            alt={user?.name || 'Profile'} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User size={48} className="text-orange-500" />
+                        )}
                       </div>
-                    )}
-                  </div>
-                  
-                  {isEditing ? (
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      
+                      {isEditing && (
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <Camera size={24} />
+                        </button>
+                      )}
+                      
                       <input
-                        type="text"
-                        value={profileForm.name || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-gray-300 focus:border-orange-500 focus:outline-none"
-                        placeholder="Enter your name"
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              const { uploadAPI } = await import('../services/api');
+                              const response = await uploadAPI.uploadProfilePic(file);
+                              setProfileForm(prev => ({ ...prev, avatar: response.data.url }));
+                            } catch (err) {
+                              console.error('Upload failed:', err);
+                            }
+                          }
+                        }}
+                        className="hidden"
                       />
                     </div>
-                  ) : (
-                    <h2 className="text-2xl font-bold text-gray-900 mt-4">
-                      {user?.name || user?.username || 'Unknown User'}
-                    </h2>
-                  )}
-                  
-                  <div className="flex items-center justify-center md:justify-start mt-2 space-x-2">
-                    <Star size={16} className="text-yellow-500" />
-                    <span className="text-gray-600">Level {levelInfo?.level || 1} Learner</span>
-                  </div>
-                </div>
 
-                {/* Profile Details */}
-                <div className="flex-1 mt-6 md:mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Contact Info */}
-                    <div className="space-y-3">
-                      {/* Email */}
-                      <div className="flex items-center text-gray-600">
-                        <Mail size={16} className="mr-2" />
-                        {isEditing ? (
-                          <input
-                            type="email"
-                            value={profileForm.email || ''}
-                            onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
-                            className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none flex-1"
-                            placeholder="Enter your email"
-                          />
-                        ) : (
-                          <span className="text-sm">{user?.email || 'No email provided'}</span>
-                        )}
-                      </div>
-                      
-                      {/* Location */}
-                      <div className="flex items-center text-gray-600">
-                        <MapPin size={16} className="mr-2" />
-                        {isEditing ? (
+                    {/* Level Badge */}
+                    <div className="mt-4 flex items-center space-x-2 bg-gradient-to-r from-yellow-100 to-orange-100 px-4 py-2 rounded-full border border-yellow-200">
+                      <Star size={16} className="text-yellow-500" />
+                      <span className="text-sm font-semibold text-gray-700">
+                        Level {levelInfo?.level || 1} Learner
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Profile Details */}
+                  <div className="flex-1 mt-6 md:mt-6">
+                    <div className="text-center md:text-left mb-6">
+                      {isEditing ? (
+                        <div className="space-y-2">
                           <input
                             type="text"
-                            value={profileForm.location || ''}
-                            onChange={(e) => setProfileForm(prev => ({ ...prev, location: e.target.value }))}
-                            className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none flex-1"
-                            placeholder="Enter your location"
-                          />
-                        ) : (
-                          <span className="text-sm">{user?.location || (isEditing ? '' : 'No location provided')}</span>
-                        )}
-                      </div>
-                      
-                      {/* School */}
-                      <div className="flex items-center text-gray-600">
-                        <School size={16} className="mr-2" />
-                        {isEditing ? (
-                          <div className="flex-1 space-y-1">
-                            <input
-                              type="text"
-                              value={profileForm.school || ''}
-                              onChange={(e) => setProfileForm(prev => ({ ...prev, school: e.target.value }))}
-                              className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none w-full"
-                              placeholder="Enter your school"
-                            />
-                            <input
-                              type="text"
-                              value={profileForm.grade || ''}
-                              onChange={(e) => setProfileForm(prev => ({ ...prev, grade: e.target.value }))}
-                              className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none w-full"
-                              placeholder="Enter your grade"
-                            />
-                          </div>
-                        ) : (
-                          <span className="text-sm">
-                            {user?.school || 'No school provided'}
-                            {user?.grade && <span className="ml-1">({user.grade})</span>}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center text-gray-600">
-                        <Calendar size={16} className="mr-2" />
-                        <span className="text-sm">Joined {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recently'}</span>
-                      </div>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="space-y-3">
-                      {streakData && (
-                        <div className="flex items-center text-gray-600">
-                          <Flame size={16} className="mr-2 text-orange-500" />
-                          <span className="text-sm">
-                            {streakData.currentStreak} day learning streak
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Bio */}
-                  {(user?.bio || isEditing) && (
-                    <div className="mt-4">
-                      {isEditing ? (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                          <textarea
-                            value={profileForm.bio || ''}
-                            onChange={(e) => setProfileForm(prev => ({ ...prev, bio: e.target.value }))}
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                            placeholder="Tell us about yourself..."
+                            value={profileForm.name || ''}
+                            onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                            className="text-3xl font-bold text-gray-900 bg-transparent border-b-2 border-orange-300 focus:border-orange-500 focus:outline-none w-full text-center md:text-left"
+                            placeholder="Enter your name"
                           />
                         </div>
                       ) : (
-                        <p className="text-gray-700">{user.bio}</p>
+                        <div>
+                          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                            {user?.name || user?.username || 'Welcome!'}
+                          </h1>
+                          {user?.bio && (
+                            <p className="text-gray-600 text-lg leading-relaxed max-w-2xl">
+                              {user.bio}
+                            </p>
+                          )}
+                        </div>
                       )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Contact Info */}
+                      <div className="space-y-3">
+                        {/* Email */}
+                        <div className="flex items-center text-gray-600">
+                          <Mail size={16} className="mr-2" />
+                          {isEditing ? (
+                            <input
+                              type="email"
+                              value={profileForm.email || ''}
+                              onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                              className="text-sm bg-transparent border-b border-gray-300 focus:border-orange-500 focus:outline-none flex-1"
+                              placeholder="Enter your email"
+                            />
+                          ) : (
+                            <span className="text-sm">{user?.email || 'No email provided'}</span>
+                          )}
+                        </div>
+                                                
+                        <div className="flex items-center text-gray-600">
+                          <Calendar size={16} className="mr-2" />
+                          <span className="text-sm">Joined {user?.joinedAt ? new Date(user?.joinedAt).toLocaleDateString() : 'Recently'}</span>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="space-y-3">
+                        {streakData && (
+                          <div className="flex items-center text-gray-600">
+                            <Flame size={16} className="mr-2 text-orange-500" />
+                            <span className="text-sm">
+                              {streakData.currentStreak} day learning streak
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  {isEditing && (
+                    <div className="flex flex-col space-y-2 mt-6 md:mt-0">
+                      <button
+                        onClick={handleSaveProfile}
+                        className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        disabled={loading}
+                      >
+                        <Save size={16} className="mr-2" />
+                        {loading ? 'Saving...' : 'Save Changes'}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <X size={16} className="mr-2" />
+                        Cancel
+                      </button>
                     </div>
                   )}
                 </div>
-
-                {/* Action Buttons */}
-                {isEditing && (
-                  <div className="flex flex-col space-y-2 mt-6 md:mt-0">
-                    <button
-                      onClick={handleSaveProfile}
-                      className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                      disabled={loading}
-                    >
-                      <Save size={16} className="mr-2" />
-                      {loading ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <X size={16} className="mr-2" />
-                      Cancel
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -841,103 +740,75 @@ const Profile = () => {
           <div className="space-y-6">
             <div className="bg-white rounded-xl p-6 shadow-sm border">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Achievement Gallery</h3>
+                <h3 className="text-lg font-semibold text-gray-900">My Achievement Gallery</h3>
                 {user && (user.role === 'admin' || user.role === 'teacher') && (
                   <button
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                    onClick={() => { setShowAddBadgeModal(true); setBadgeForm({ name: '', description: '', icon: '', xp_reward: 0, gems_reward: 0, rarity: 'common', requirement: '', type: 'completion' }); }}
+                    className="flex items-center bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition"
+                    onClick={() => navigate('/badges')}
                   >
-                    + Add Badge
+                    <Settings size={16} className="mr-2" />
+                    Manage Badges
                   </button>
                 )}
               </div>
-              {badgeCrudLoading && <div className="text-blue-600 mb-2">Processing...</div>}
-              {badgeCrudSuccess && <div className="text-green-600 mb-2">{badgeCrudSuccess}</div>}
-              {badgeCrudError && <div className="text-red-600 mb-2">{badgeCrudError}</div>}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {badges.length > 0 ? (
-                  badges.map((badge) => (
-                    <div key={badge._id} className="relative">
-                      <BadgeDisplay badges={[badge]} layout="grid" showDetails={true} />
-                      {user && (user.role === 'admin' || user.role === 'teacher') && (
-                        <div className="absolute top-2 right-2 flex gap-2">
-                          <button
-                            className="bg-yellow-400 text-white px-2 py-1 rounded hover:bg-yellow-500"
-                            onClick={() => { setShowEditBadgeModal(true); setEditBadge(badge); setBadgeForm({ name: badge.name, description: badge.description, icon: badge.icon, xp_reward: badge.xp_reward, gems_reward: badge.gems_reward, rarity: badge.rarity, requirement: badge.requirement, type: badge.type }); }}
-                          >Edit</button>
-                          <button
-                            className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                            onClick={() => handleDeleteBadge(badge._id)}
-                          >Delete</button>
+                {recentAchievements && recentAchievements.length > 0 ? (
+                  recentAchievements.map((achievement) => (
+                    <div key={achievement.id} className="relative">
+                      <BadgeDisplay badges={[achievement]} layout="grid" showDetails={true} />
+                      <div className="absolute top-2 right-2">
+                        <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                          Earned
                         </div>
-                      )}
+                      </div>
                     </div>
                   ))
                 ) : (
                   <div className="col-span-full text-center py-8">
                     <Award size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-600">No achievements yet</p>
-                    <p className="text-sm text-gray-500">Keep learning to unlock your first badge!</p>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No achievements unlocked yet</h4>
+                    <p className="text-gray-600 mb-4">
+                      Start your learning journey to unlock amazing badges and achievements!
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                      <button
+                        onClick={() => navigate('/subjects')}
+                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <BookOpen size={16} className="mr-2" />
+                        Start Learning
+                      </button>
+                      {user && (user.role === 'admin' || user.role === 'teacher') && (
+                        <button
+                          onClick={() => navigate('/badges')}
+                          className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <Settings size={16} className="mr-2" />
+                          Configure Badges
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
-            {/* Add/Edit Badge Modal */}
-            {(showAddBadgeModal || showEditBadgeModal) && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-                  <h2 className="text-xl font-bold mb-4">{showAddBadgeModal ? 'Add Badge' : 'Edit Badge'}</h2>
-                  <form onSubmit={e => { e.preventDefault(); showAddBadgeModal ? handleAddBadge() : handleEditBadge(); }}>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Name</label>
-                      <input type="text" className="w-full border rounded px-3 py-2 text-black" value={badgeForm.name} onChange={e => setBadgeForm({ ...badgeForm, name: e.target.value })} required />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Description</label>
-                      <textarea className="w-full border rounded px-3 py-2 text-black" value={badgeForm.description} onChange={e => setBadgeForm({ ...badgeForm, description: e.target.value })} required />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Icon (emoji or URL)</label>
-                      <input type="text" className="w-full border rounded px-3 py-2 text-black" value={badgeForm.icon} onChange={e => setBadgeForm({ ...badgeForm, icon: e.target.value })} />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">XP Reward</label>
-                      <input type="number" className="w-full border rounded px-3 py-2 text-black" value={badgeForm.xp_reward} onChange={e => setBadgeForm({ ...badgeForm, xp_reward: Number(e.target.value) })} min={0} />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Gems Reward</label>
-                      <input type="number" className="w-full border rounded px-3 py-2 text-black" value={badgeForm.gems_reward} onChange={e => setBadgeForm({ ...badgeForm, gems_reward: Number(e.target.value) })} min={0} />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Rarity</label>
-                      <select className="w-full border rounded px-3 py-2 text-black" value={badgeForm.rarity} onChange={e => setBadgeForm({ ...badgeForm, rarity: e.target.value })} required>
-                        <option value="common">Common</option>
-                        <option value="rare">Rare</option>
-                        <option value="epic">Epic</option>
-                        <option value="legendary">Legendary</option>
-                      </select>
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Requirement</label>
-                      <input type="text" className="w-full border rounded px-3 py-2 text-black" value={badgeForm.requirement} onChange={e => setBadgeForm({ ...badgeForm, requirement: e.target.value })} />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Type</label>
-                      <select className="w-full border rounded px-3 py-2 text-black" value={badgeForm.type} onChange={e => setBadgeForm({ ...badgeForm, type: e.target.value })} required>
-                        <option value="completion">Completion</option>
-                        <option value="streak">Streak</option>
-                        <option value="performance">Performance</option>
-                        <option value="activity">Activity</option>
-                      </select>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <button type="button" className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => { setShowAddBadgeModal(false); setShowEditBadgeModal(false); setEditBadge(null); setBadgeForm({ name: '', description: '', icon: '', xp_reward: 0, gems_reward: 0, rarity: 'common', requirement: '', type: 'completion' }); }}>Cancel</button>
-                      <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{showAddBadgeModal ? 'Add' : 'Save'}</button>
-                    </div>
-                  </form>
+
+              {recentAchievements && recentAchievements.length > 0 && (
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Showing your most recent achievements. Keep learning to unlock more!
+                  </p>
+                  {user && (user.role === 'admin' || user.role === 'teacher') && (
+                    <button
+                      onClick={() => navigate('/badges')}
+                      className="text-yellow-600 hover:text-yellow-700 text-sm font-medium"
+                    >
+                      Configure achievement system →
+                    </button>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
@@ -1099,82 +970,334 @@ const Profile = () => {
         {/* User Management Tab (admin/teacher only) */}
         {activeTab === 'users' && user && (user.role === 'admin' || user.role === 'teacher') && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm border">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
-                <button
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                  onClick={() => { setShowAddUserModal(true); setUserForm({ name: '', email: '', role: 'student', password: '' }); }}
-                >
-                  + Add User
-                </button>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* Header Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
+                      <p className="text-sm text-gray-600">Manage system users and their permissions</p>
+                    </div>
+                  </div>
+                  <button
+                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+                    onClick={() => { setShowAddUserModal(true); setUserForm({ name: '', email: '', role: 'student', password: '' }); }}
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Add User</span>
+                  </button>
+                </div>
               </div>
-              {userCrudLoading && <div className="text-blue-600 mb-2">Processing...</div>}
-              {userCrudSuccess && <div className="text-green-600 mb-2">{userCrudSuccess}</div>}
-              {userCrudError && <div className="text-red-600 mb-2">{userCrudError}</div>}
+
+              {/* Status Messages */}
+              {(userCrudLoading || userCrudSuccess || userCrudError) && (
+                <div className="px-6 py-3 border-b border-gray-200">
+                  {userCrudLoading && (
+                    <div className="flex items-center space-x-2 text-blue-600">
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Processing...</span>
+                    </div>
+                  )}
+                  {userCrudSuccess && (
+                    <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                      <div className="w-4 h-4 bg-green-600 rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      </div>
+                      <span>{userCrudSuccess}</span>
+                    </div>
+                  )}
+                  {userCrudError && (
+                    <div className="flex items-center space-x-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                      <X className="w-4 h-4" />
+                      <span>{userCrudError}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Table Section */}
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200 text-black">
-                    {users.map((u) => (
-                      <tr key={u._id}>
-                        <td className="px-4 py-2 whitespace-nowrap">{u.username}</td>
-                        <td className="px-4 py-2 whitespace-nowrap">{u.email}</td>
-                        <td className="px-4 py-2 whitespace-nowrap capitalize">{u.role}</td>
-                        <td className="px-4 py-2 whitespace-nowrap">
-                          <button
-                            className="bg-yellow-400 text-white px-2 py-1 rounded hover:bg-yellow-500 mr-2"
-                            onClick={() => { setShowEditUserModal(true); setEditUser(u); setUserForm({ name: u.username, email: u.email, role: u.role, password: '' }); }}
-                          >Edit</button>
-                          <button
-                            className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                            onClick={() => handleDeleteUser(u._id)}
-                          >Delete</button>
-                        </td>
+                {users.length > 0 ? (
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          User Information
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          Contact
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          Role
+                        </th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {users.map((u, index) => (
+                        <tr key={u._id} className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                          {/* User Information */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                                <span className="text-sm font-semibold text-gray-700">
+                                  {u.username?.charAt(0)?.toUpperCase() || 'U'}
+                                </span>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{u.username}</div>
+                                <div className="text-xs text-gray-500">ID: {u._id?.slice(-6) || 'N/A'}</div>
+                              </div>
+                            </div>
+                          </td>
+                          
+                          {/* Contact */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-sm text-gray-900">
+                              <Mail className="w-4 h-4 text-gray-400 mr-2" />
+                              {u.email}
+                            </div>
+                          </td>
+                          
+                          {/* Role */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${
+                              u.role === 'admin' ? 'bg-red-100 text-red-800' :
+                              u.role === 'teacher' ? 'bg-blue-100 text-blue-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {u.role === 'admin' && '⚡ '}
+                              {u.role === 'teacher' && '👩‍🏫 '}
+                              {u.role === 'student' && '🎓 '}
+                              {u.role}
+                            </span>
+                          </td>
+                          
+                          {/* Actions */}
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <button
+                                className="flex items-center space-x-1 bg-yellow-500 text-white px-3 py-1.5 rounded-lg hover:bg-yellow-600 transition-colors text-xs font-medium"
+                                onClick={() => { 
+                                  setShowEditUserModal(true); 
+                                  setEditUser(u); 
+                                  setUserForm({ name: u.username, email: u.email, role: u.role, password: '' }); 
+                                }}
+                              >
+                                <Edit3 className="w-3 h-3" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                className="flex items-center space-x-1 bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 transition-colors text-xs font-medium"
+                                onClick={() => handleDeleteUser(u._id)}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No Users Found</h4>
+                    <p className="text-gray-600 mb-4">Get started by adding your first user to the system.</p>
+                    <button
+                      className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium mx-auto"
+                      onClick={() => { setShowAddUserModal(true); setUserForm({ name: '', email: '', role: 'student', password: '' }); }}
+                    >
+                      <User className="w-4 h-4" />
+                      <span>Add First User</span>
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {/* Footer */}
+              {users.length > 0 && (
+                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>Total users: {users.length}</span>
+                    <span>
+                      Admins: {users.filter(u => u.role === 'admin').length} • 
+                      Teachers: {users.filter(u => u.role === 'teacher').length} • 
+                      Students: {users.filter(u => u.role === 'student').length}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             {/* Add/Edit User Modal */}
             {(showAddUserModal || showEditUserModal) && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-                  <h2 className="text-xl font-bold mb-4">{showAddUserModal ? 'Add User' : 'Edit User'}</h2>
-                  <form onSubmit={e => { e.preventDefault(); showAddUserModal ? handleAddUser() : handleEditUser(); }}>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Name</label>
-                      <input type="text" className="w-full border rounded px-3 py-2 text-black" value={userForm.name} onChange={e => setUserForm({ ...userForm, name: e.target.value })} required />
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto transform transition-all">
+                  {/* Modal Header */}
+                  <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold text-gray-900">
+                            {showAddUserModal ? 'Add New User' : 'Edit User'}
+                          </h2>
+                          <p className="text-sm text-gray-600">
+                            {showAddUserModal ? 'Create a new user account' : 'Update user information'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { 
+                          setShowAddUserModal(false); 
+                          setShowEditUserModal(false); 
+                          setEditUser(null); 
+                          setUserForm({ name: '', email: '', role: 'student', password: '' }); 
+                        }}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
                     </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Email</label>
-                      <input type="email" className="w-full border rounded px-3 py-2 text-black" value={userForm.email} onChange={e => setUserForm({ ...userForm, email: e.target.value })} required />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Role</label>
-                      <select className="w-full border rounded px-3 py-2 text-black" value={userForm.role} onChange={e => setUserForm({ ...userForm, role: e.target.value })} required>
-                        <option value="student">Student</option>
-                        <option value="teacher">Teacher</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-1">Password {showAddUserModal && <span className="text-xs text-gray-400">(required for new user)</span>}</label>
-                      <input type="password" className="w-full border rounded px-3 py-2 text-black" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} required={showAddUserModal} />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <button type="button" className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => { setShowAddUserModal(false); setShowEditUserModal(false); setEditUser(null); setUserForm({ name: '', email: '', role: 'student', password: '' }); }}>Cancel</button>
-                      <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{showAddUserModal ? 'Add' : 'Save'}</button>
-                    </div>
-                  </form>
+                  </div>
+
+                  {/* Modal Body */}
+                  <div className="px-6 py-6">
+                    <form onSubmit={e => { e.preventDefault(); showAddUserModal ? handleAddUser() : handleEditUser(); }} className="space-y-6">
+                      {/* Name Field */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <User className="w-4 h-4 inline mr-2" />
+                          Full Name
+                        </label>
+                        <input 
+                          type="text" 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-500" 
+                          placeholder="Enter full name"
+                          value={userForm.name} 
+                          onChange={e => setUserForm({ ...userForm, name: e.target.value })} 
+                          required 
+                        />
+                      </div>
+
+                      {/* Email Field */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Mail className="w-4 h-4 inline mr-2" />
+                          Email Address
+                        </label>
+                        <input 
+                          type="email" 
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-500" 
+                          placeholder="Enter email address"
+                          value={userForm.email} 
+                          onChange={e => setUserForm({ ...userForm, email: e.target.value })} 
+                          required 
+                        />
+                      </div>
+
+                      {/* Role Field */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Shield className="w-4 h-4 inline mr-2" />
+                          User Role
+                        </label>
+                        <div className="relative">
+                          <select 
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 appearance-none bg-white" 
+                            value={userForm.role} 
+                            onChange={e => setUserForm({ ...userForm, role: e.target.value })} 
+                            required
+                          >
+                            <option value="student">🎓 Student</option>
+                            <option value="teacher">👩‍🏫 Teacher</option>
+                            <option value="admin">⚡ Administrator</option>
+                          </select>
+                          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                          </div>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Select the appropriate role for this user
+                        </p>
+                      </div>
+
+                      {/* Password Field */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Eye className="w-4 h-4 inline mr-2" />
+                          Password
+                          {showAddUserModal && <span className="text-red-500 ml-1">*</span>}
+                          {!showAddUserModal && <span className="text-xs text-gray-500 ml-2">(leave blank to keep current)</span>}
+                        </label>
+                        <div className="relative">
+                          <input 
+                            type={showPassword ? "text" : "password"}
+                            className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-500" 
+                            placeholder={showAddUserModal ? "Enter password" : "Enter new password (optional)"}
+                            value={userForm.password} 
+                            onChange={e => setUserForm({ ...userForm, password: e.target.value })} 
+                            required={showAddUserModal}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+                          >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                        {showAddUserModal && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            Password must be at least 6 characters long
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Form Actions */}
+                      <div className="flex justify-end space-x-3 pt-4">
+                        <button 
+                          type="button" 
+                          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                          onClick={() => { 
+                            setShowAddUserModal(false); 
+                            setShowEditUserModal(false); 
+                            setEditUser(null); 
+                            setUserForm({ name: '', email: '', role: 'student', password: '' }); 
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="submit" 
+                          disabled={userCrudLoading}
+                          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                          {userCrudLoading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <span>Processing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4" />
+                              <span>{showAddUserModal ? 'Add User' : 'Save Changes'}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               </div>
             )}

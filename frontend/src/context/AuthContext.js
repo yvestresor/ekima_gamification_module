@@ -166,6 +166,11 @@ export const AuthProvider = ({ children }) => {
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
         payload: { user, token }
       });
+      // Immediately fetch fresh user profile in background to avoid stale state
+      try {
+        const me = await authAPI.getMe();
+        dispatch({ type: AUTH_ACTIONS.LOAD_USER_SUCCESS, payload: me.data });
+      } catch (_) {}
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Login failed';
@@ -291,9 +296,9 @@ export const AuthProvider = ({ children }) => {
     // For now, basic role-based permissions
     switch (permission) {
       case 'view_analytics':
-        return ['admin', 'teacher'].includes(state.user.type);
+        return ['admin', 'teacher'].includes(state.user.role);
       case 'manage_content':
-        return ['admin'].includes(state.user.type);
+        return ['admin'].includes(state.user.role);
       case 'view_progress':
         return true; // All authenticated users
       default:

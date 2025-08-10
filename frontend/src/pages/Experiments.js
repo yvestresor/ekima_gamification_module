@@ -814,51 +814,213 @@ const Experiments = () => {
       </div>
       {/* Add/Edit Experiment Modal */}
       {(showAddExperimentModal || showEditExperimentModal) && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-xl font-bold mb-4">{showAddExperimentModal ? 'Add Experiment' : 'Edit Experiment'}</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <Beaker className="w-6 h-6 mr-3 text-green-600" />
+                  {showAddExperimentModal ? 'Add New Experiment' : 'Edit Experiment'}
+                </h2>
+                <button
+                  onClick={() => { 
+                    setShowAddExperimentModal(false); 
+                    setShowEditExperimentModal(false); 
+                    setEditExperiment(null); 
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
             <form onSubmit={e => { e.preventDefault(); showAddExperimentModal ? handleAddExperiment() : handleEditExperiment(); }}>
-              <div className="mb-3">
-                <label className="block text-gray-700 mb-1">Title</label>
-                <input type="text" className="w-full border rounded px-3 py-2 text-black" value={experimentForm.title} onChange={e => setExperimentForm({ ...experimentForm, title: e.target.value })} required />
+              <div className="px-6 py-6 space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Basic Information
+                  </h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Experiment Title *</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                      placeholder="Enter an engaging title for your experiment" 
+                      value={experimentForm.title} 
+                      onChange={e => setExperimentForm({ ...experimentForm, title: e.target.value })} 
+                      required 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                    <textarea 
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none" 
+                      placeholder="Describe what students will learn and discover from this experiment..." 
+                      value={experimentForm.description} 
+                      onChange={e => setExperimentForm({ ...experimentForm, description: e.target.value })} 
+                      required 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                    <select 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                      value={experimentForm.subject} 
+                      onChange={e => setExperimentForm({ ...experimentForm, subject: e.target.value })} 
+                      required
+                    >
+                      <option value="">Choose a subject...</option>
+                      {subjects.map(subj => (
+                        <option key={subj._id} value={subj._id}>{subj.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Experiment Configuration */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                    </svg>
+                    Configuration
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes) *</label>
+                      <input 
+                        type="number" 
+                        min={1} 
+                        max={180}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={experimentForm.duration} 
+                        onChange={e => setExperimentForm({ ...experimentForm, duration: parseInt(e.target.value) })} 
+                        required 
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty Level</label>
+                      <select 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={experimentForm.difficulty} 
+                        onChange={e => setExperimentForm({ ...experimentForm, difficulty: e.target.value })}
+                      >
+                        <option value="easy">🟢 Easy</option>
+                        <option value="medium">🟡 Medium</option>
+                        <option value="hard">🔴 Hard</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">XP Reward</label>
+                      <input 
+                        type="number" 
+                        min={1} 
+                        max={500}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                        value={experimentForm.xpReward} 
+                        onChange={e => setExperimentForm({ ...experimentForm, xpReward: parseInt(e.target.value) })} 
+                        required 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tags and Categorization */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    Tags & Categories
+                  </h3>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" 
+                      placeholder="chemistry, reactions, acid-base, laboratory" 
+                      value={experimentForm.tags.join(', ')} 
+                      onChange={e => setExperimentForm({ ...experimentForm, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })} 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Separate tags with commas to help students find this experiment</p>
+                  </div>
+                </div>
+
+                {/* Experiment Design */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.78 0-2.678-2.153-1.415-3.414l5-5A2 2 0 009 9.172V5L8 4z" />
+                    </svg>
+                    Experiment Design
+                  </h3>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <Info className="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-900 mb-1">Advanced Configuration</h4>
+                        <p className="text-sm text-blue-700">
+                          Additional experiment parameters, steps, and learning objectives can be configured after creation in the detailed experiment editor.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="mb-3">
-                <label className="block text-gray-700 mb-1">Description</label>
-                <textarea className="w-full border rounded px-3 py-2 text-black" value={experimentForm.description} onChange={e => setExperimentForm({ ...experimentForm, description: e.target.value })} required />
-              </div>
-              <div className="mb-3">
-                <label className="block text-gray-700 mb-1">Subject</label>
-                <select className="w-full border rounded px-3 py-2 text-black" value={experimentForm.subject} onChange={e => setExperimentForm({ ...experimentForm, subject: e.target.value })} required>
-                  <option value="">Select Subject</option>
-                  {subjects.map(subj => (
-                    <option key={subj._id} value={subj._id}>{subj.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-3">
-                <label className="block text-gray-700 mb-1">Duration (minutes)</label>
-                <input type="number" className="w-full border rounded px-3 py-2 text-black" value={experimentForm.duration} onChange={e => setExperimentForm({ ...experimentForm, duration: e.target.value })} required min="1" />
-              </div>
-              <div className="mb-3">
-                <label className="block text-gray-700 mb-1">Difficulty</label>
-                <select className="w-full border rounded px-3 py-2 text-black" value={experimentForm.difficulty} onChange={e => setExperimentForm({ ...experimentForm, difficulty: e.target.value })}>
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-              </div>
-              <div className="mb-3">
-                <label className="block text-gray-700 mb-1">XP Reward</label>
-                <input type="number" className="w-full border rounded px-3 py-2 text-black" value={experimentForm.xpReward} onChange={e => setExperimentForm({ ...experimentForm, xpReward: e.target.value })} required min="1" />
-              </div>
-              <div className="mb-3">
-                <label className="block text-gray-700 mb-1">Tags (comma separated)</label>
-                <input type="text" className="w-full border rounded px-3 py-2 text-black" value={experimentForm.tags.join(', ')} onChange={e => setExperimentForm({ ...experimentForm, tags: e.target.value.split(',').map(t => t.trim()) })} />
-              </div>
-              {/* Parameters and Steps can be added as needed */}
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" className="px-4 py-2 bg-gray-200 rounded" onClick={() => { setShowAddExperimentModal(false); setShowEditExperimentModal(false); setEditExperiment(null); }}>Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" disabled={experimentCrudLoading}>{showAddExperimentModal ? 'Add' : 'Save'}</button>
+
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-xl">
+                <div className="flex justify-end space-x-3">
+                  <button 
+                    type="button" 
+                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors" 
+                    onClick={() => { 
+                      setShowAddExperimentModal(false); 
+                      setShowEditExperimentModal(false); 
+                      setEditExperiment(null); 
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={experimentCrudLoading || !experimentForm.title || !experimentForm.description || !experimentForm.subject}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center"
+                  >
+                    {experimentCrudLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Beaker className="w-4 h-4 mr-2" />
+                        {showAddExperimentModal ? 'Create Experiment' : 'Save Changes'}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

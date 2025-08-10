@@ -55,9 +55,6 @@ const Notifications = () => {
     
     // Handle navigation based on notification type
     switch (notification.type) {
-      case 'achievement':
-        navigate('/profile?tab=achievements');
-        break;
       case 'recommendation':
         navigate('/');
         break;
